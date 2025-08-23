@@ -6,8 +6,11 @@ import { Category } from '../../core/entities/category.entity';
 
 import { CreateProductDto, UpdateProductDto, ProductQueryDto } from './dto/create-product.dto';
 
+import { AppLogger } from '../../utils/logger';
+
 @Injectable()
 export class ProductsService {
+  private readonly logger = new AppLogger();
   constructor(
     @InjectRepository(Product)
     private productsRepository: Repository<Product>,
@@ -31,6 +34,7 @@ export class ProductsService {
         category, // Replace string with Category entity
       });
 
+      this.logger.debug('Create products');
       return await this.productsRepository.save(product);
     } catch (error) {
       if (error instanceof BadRequestException) {
