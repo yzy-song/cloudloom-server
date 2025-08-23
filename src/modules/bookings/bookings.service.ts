@@ -40,7 +40,7 @@ export class BookingsService {
       where: {
         productId,
         bookingDate: new Date(bookingDate),
-        timeSlot,
+        timeSlot: timeSlot,
         status: In(['pending', 'confirmed']), // 只检查有效状态的预约
       },
     });
@@ -129,7 +129,7 @@ export class BookingsService {
     };
   }
 
-  async findOne(id: number): Promise<Booking> {
+  async findOne(id: string): Promise<Booking> {
     const booking = await this.bookingsRepository.findOne({
       where: { id },
       relations: ['product'],
@@ -142,7 +142,7 @@ export class BookingsService {
     return booking;
   }
 
-  async update(id: number, updateBookingDto: UpdateBookingDto): Promise<Booking> {
+  async update(id: string, updateBookingDto: UpdateBookingDto): Promise<Booking> {
     const booking = await this.bookingsRepository.findOne({
       where: { id },
       relations: ['product'],
@@ -181,7 +181,7 @@ export class BookingsService {
     }
   }
 
-  async remove(id: number): Promise<void> {
+  async remove(id: string): Promise<void> {
     const booking = await this.bookingsRepository.findOne({
       where: { id },
       relations: ['product'],
@@ -225,7 +225,7 @@ export class BookingsService {
       })
       .getMany();
 
-    const bookedSlotValues = bookedSlots.map(slot => slot.timeSlot);
+    const bookedSlotValues = bookedSlots.map(slot => slot.bookingTime);
 
     // 返回可用的时间段
     return allTimeSlots.filter(slot => !bookedSlotValues.includes(slot));

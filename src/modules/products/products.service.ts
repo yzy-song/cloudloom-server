@@ -2,20 +2,40 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Like, Between, MoreThanOrEqual, LessThanOrEqual, In, ILike } from 'typeorm';
 import { Product } from '../../core/entities/product.entity';
+import { Category } from '../../core/entities/category.entity';
+
 import { CreateProductDto, UpdateProductDto, ProductQueryDto } from './dto/create-product.dto';
 
 @Injectable()
 export class ProductsService {
   constructor(
     @InjectRepository(Product)
-    private productsRepository: Repository<Product>
+    private productsRepository: Repository<Product>,
+    @InjectRepository(Category)
+    private categoriesRepository: Repository<Category>
   ) {}
 
   async create(createProductDto: CreateProductDto): Promise<Product> {
     try {
-      const product = this.productsRepository.create(createProductDto);
+      // Convert category string to Category entity
+      const category = await this.categoriesRepository.findOne({
+        where: { name: createProductDto.category },
+      });
+
+      if (!category) {
+        throw new BadRequestException(`分类 "${createProductDto.category}" 不存在`);
+      }
+
+      const product = this.productsRepository.create({
+        ...createProductDto,
+        category, // Replace string with Category entity
+      });
+
       return await this.productsRepository.save(product);
     } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
       throw new BadRequestException('创建产品失败: ' + error.message);
     }
   }
@@ -111,8 +131,39 @@ export class ProductsService {
     }
 
     try {
-      // 使用 spread 操作符合并更新
-      const updatedProduct = this.productsRepository.merge(product, updateProductDto);
+      // 创建安全的合并数据对象
+      const mergeData: Partial<Product> = {};
+
+      // 手动复制每个字段，确保类型正确
+      if (updateProductDto.title !== undefined) {
+        mergeData.title = updateProductDto.title;
+      }
+
+      if (updateProductDto.description !== undefined) {
+        mergeData.description = updateProductDto.description;
+      }
+
+      if (updateProductDto.price !== undefined) {
+        mergeData.price = updateProductDto.price;
+      }
+
+      // 特殊处理 category 字段
+      if (updateProductDto.category !== undefined) {
+        if (typeof updateProductDto.category === 'string') {
+          const category = await this.categoriesRepository.findOne({
+            where: { name: updateProductDto.category },
+          });
+          if (!category) {
+            throw new BadRequestException(`分类 "${updateProductDto.category}" 不存在`);
+          }
+          mergeData.category = category;
+        } else {
+          mergeData.category = updateProductDto.category;
+        }
+      }
+
+      // 使用 merge 方法
+      const updatedProduct = this.productsRepository.merge(product, mergeData);
       return await this.productsRepository.save(updatedProduct);
     } catch (error) {
       throw new BadRequestException('更新产品失败: ' + error.message);
@@ -129,24 +180,14 @@ export class ProductsService {
 
   // 获取所有朝代选项
   async getDynastyOptions(): Promise<string[]> {
-    const dynasties = await this.productsRepository
-      .createQueryBuilder('product')
-      .select('DISTINCT product.dynasty', 'dynasty')
-      .where('product.isActive = :isActive', { isActive: true })
-      .orderBy('dynasty', 'ASC')
-      .getRawMany();
+    const dynasties = await this.productsRepository.createQueryBuilder('product').select('DISTINCT product.dynasty', 'dynasty').where('product.isActive = :isActive', { isActive: true }).orderBy('dynasty', 'ASC').getRawMany();
 
     return dynasties.map(d => d.dynasty);
   }
 
   // 获取所有分类选项
   async getCategoryOptions(): Promise<string[]> {
-    const categories = await this.productsRepository
-      .createQueryBuilder('product')
-      .select('DISTINCT product.category', 'category')
-      .where('product.isActive = :isActive', { isActive: true })
-      .orderBy('category', 'ASC')
-      .getRawMany();
+    const categories = await this.productsRepository.createQueryBuilder('product').select('DISTINCT product.category', 'category').where('product.isActive = :isActive', { isActive: true }).orderBy('category', 'ASC').getRawMany();
 
     return categories.map(c => c.category);
   }

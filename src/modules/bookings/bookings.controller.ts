@@ -117,7 +117,7 @@ export class BookingsController {
     status: 404,
     description: '预约未找到',
   })
-  findOne(@Param('id', ParseIntPipe) id: number) {
+  findOne(@Param('id', ParseIntPipe) id: string) {
     return this.bookingsService.findOne(id);
   }
 
@@ -137,7 +137,7 @@ export class BookingsController {
     status: 400,
     description: '请求参数错误',
   })
-  update(@Param('id', ParseIntPipe) id: number, @Body() updateBookingDto: UpdateBookingDto) {
+  update(@Param('id', ParseIntPipe) id: string, @Body() updateBookingDto: UpdateBookingDto) {
     return this.bookingsService.update(id, updateBookingDto);
   }
 
@@ -153,7 +153,7 @@ export class BookingsController {
     status: 404,
     description: '预约未找到',
   })
-  remove(@Param('id', ParseIntPipe) id: number) {
+  remove(@Param('id', ParseIntPipe) id: string) {
     return this.bookingsService.remove(id);
   }
 }

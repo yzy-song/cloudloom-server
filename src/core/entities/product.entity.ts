@@ -2,12 +2,12 @@
  * @Author: yzy
  * @Date: 2025-08-19 22:52:00
  * @LastEditors: yzy
- * @LastEditTime: 2025-08-19 23:05:01
+ * @LastEditTime: 2025-08-23 09:42:07
  */
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, Index } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, Index, ManyToOne, OneToMany, JoinColumn } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
-import { OneToMany } from 'typeorm';
 import { Booking } from './booking.entity';
+import { Category } from './category.entity';
 
 @Entity('products')
 export class Product {
@@ -27,16 +27,18 @@ export class Product {
   @Column('decimal', { precision: 10, scale: 2 })
   price: number;
 
-  @ApiProperty({ description: '产品分类' })
-  @Column({ length: 100 })
-  category: string;
+  // 更改为与 Category 实体关联
+  @ApiProperty({ description: '分类', type: () => Category })
+  @ManyToOne(() => Category, category => category.products, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'category_id' })
+  category: Category;
 
   @ApiProperty({ description: '朝代' })
   @Column({ length: 50 })
   dynasty: string;
 
   @ApiProperty({ description: '朝代标签' })
-  @Column({ name: 'dynasty_label', length: 20 })
+  @Column({ name: 'dynasty_label', type: 'varchar', length: 20, nullable: true })
   dynastyLabel: string;
 
   @ApiProperty({ description: '材质', required: false })
@@ -72,18 +74,17 @@ export class Product {
   isActive: boolean;
 
   @ApiProperty({ description: '库存数量' })
-  @Column({ name: 'stock_quantity', default: 1 })
+  @Column({ name: 'stock_quantity', default: 0 })
   stockQuantity: number;
 
   @ApiProperty({ description: '创建时间' })
-  @CreateDateColumn({ name: 'created_at' })
+  @CreateDateColumn({ name: 'created_at', type: 'timestamptz', default: () => 'NOW()' })
   createdAt: Date;
 
   @ApiProperty({ description: '更新时间' })
-  @UpdateDateColumn({ name: 'updated_at' })
+  @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz', default: () => 'NOW()' })
   updatedAt: Date;
 
-  // 关联关系
-  @OneToMany(() => Booking, (booking) => booking.product)
+  @OneToMany(() => Booking, booking => booking.product)
   bookings: Booking[];
 }

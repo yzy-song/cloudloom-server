@@ -1,15 +1,16 @@
+// src/seed-data.ts
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from '../app.module';
 import { ProductsService } from '../modules/products/products.service';
 import { BookingsService } from '../modules/bookings/bookings.service';
-import { InquiriesService } from '../modules/inquiries/inquiries.service';
+import { CollaborationApplicationsService } from '../modules/collaboration-applications/collaboration-applications.service';
 
 async function bootstrap() {
   const app = await NestFactory.createApplicationContext(AppModule);
 
   const productsService = app.get(ProductsService);
   const bookingsService = app.get(BookingsService);
-  const inquiriesService = app.get(InquiriesService);
+  const collaborationService = app.get(CollaborationApplicationsService); // 更新为新服务
 
   console.log('开始填充种子数据...');
 
@@ -19,7 +20,7 @@ async function bootstrap() {
     // 注意：在实际生产环境中应该禁用或谨慎使用此操作
     // await productsService.clearAll();
     // await bookingsService.clearAll();
-    // await inquiriesService.clearAll();
+    // await collaborationService.clearAll(); // 更新为新服务
 
     // 添加产品数据
     console.log('添加产品数据...');
@@ -32,69 +33,53 @@ async function bootstrap() {
         dynasty: 'tang',
         dynastyLabel: '唐',
         material: '100%桑蚕丝',
-        sizeOptions: ['S', 'M', 'L', 'XL'],
-        careInstructions: '手洗，不可漂白，低温熨烫',
-        details: ['100% 天然桑蚕丝面料', '手工刺绣装饰纹样', '可拆卸披帛设计', '渐变染色工艺', '传统缠枝莲纹样'],
-        tags: ['热门', '新品', '真丝'],
-        images: ['tang-dress-1.jpg', 'tang-dress-2.jpg'],
-        reviews: 28,
+        sizeOptions: ['S', 'M', 'L'],
+        careInstructions: '建议干洗',
+        details: ['面料: 100% 桑蚕丝', '工艺: 提花、刺绣', '特点: 轻薄透气，飘逸灵动'],
+        tags: ['新品', '唐风'],
+        images: ['/assets/images/product1-1.jpg', '/assets/images/product1-2.jpg'],
         stockQuantity: 5,
+        isActive: true,
       },
       {
-        title: '宋制百迭裙',
-        description: '宋代风格的百迭裙，清新淡雅，体现宋代文人雅士的审美',
+        title: '宋制褙子裙 · 清风徐来',
+        description: '简约优雅的宋制风格，面料挺括，线条流畅，适合日常穿着',
         price: 79.99,
-        category: '百迭裙',
+        category: '褙子',
         dynasty: 'song',
         dynastyLabel: '宋',
         material: '棉麻混纺',
         sizeOptions: ['S', 'M', 'L'],
-        careInstructions: '手洗，阴干',
-        details: ['棉麻混纺面料', '手工褶裥工艺', '清新淡雅配色', '宋代传统纹样'],
-        tags: ['简约', '日常'],
-        images: ['song-dress-1.jpg', 'song-dress-2.jpg'],
-        reviews: 15,
+        careInstructions: '可机洗',
+        details: ['面料: 棉麻混纺', '工艺: 剪裁', '特点: 简约、日常、舒适'],
+        tags: ['经典', '宋制'],
+        images: ['/assets/images/product2-1.jpg', '/assets/images/product2-2.jpg'],
         stockQuantity: 3,
+        isActive: true,
       },
       {
-        title: '明制马面裙',
-        description: '明代经典马面裙，端庄大气，适合各种正式场合',
+        title: '明制袄裙 · 灼灼其华',
+        description: '明朝时期女子常服，端庄大气，采用云锦面料，彰显华贵典雅',
         price: 99.99,
-        category: '马面裙',
+        category: '袄裙',
         dynasty: 'ming',
         dynastyLabel: '明',
-        material: '织金缎',
-        sizeOptions: ['S', 'M', 'L', 'XL'],
-        careInstructions: '干洗',
-        details: ['高级织金缎面料', '手工缝制', '传统云纹图案', '可调节腰围'],
-        tags: ['豪华', '正式', '织金'],
-        images: ['ming-dress-1.jpg', 'ming-dress-2.jpg'],
-        reviews: 42,
+        material: '云锦',
+        sizeOptions: ['S', 'M', 'L'],
+        careInstructions: '建议干洗',
+        details: ['面料: 云锦', '工艺: 织造、刺绣', '特点: 华贵、端庄'],
+        tags: ['新品', '明制'],
+        images: ['/assets/images/product3-1.jpg', '/assets/images/product3-2.jpg'],
         stockQuantity: 2,
-      },
-      {
-        title: '汉服刺绣团扇',
-        description: '手工刺绣真丝团扇，传统纹样设计，汉服搭配佳品',
-        price: 24.99,
-        category: '配饰',
-        dynasty: '通用',
-        dynastyLabel: '通用',
-        material: '真丝、竹',
-        sizeOptions: ['标准'],
-        careInstructions: '避免潮湿',
-        details: ['手工双面刺绣', '天然竹制扇骨', '传统吉祥图案', '精美礼盒包装'],
-        tags: ['配饰', '手工', '礼品'],
-        images: ['fan-1.jpg', 'fan-2.jpg'],
-        reviews: 36,
-        stockQuantity: 20,
+        isActive: true,
       },
     ];
 
-    const createdProducts: Array<{ id: string | number }> = [];
+    const createdProducts: any[] = [];
     for (const productData of products) {
       const product = await productsService.create(productData as any);
+      console.log(`产品 \"${product.title}\" 创建成功`);
       createdProducts.push(product);
-      console.log(`产品 "${product.title}" 创建成功`);
     }
 
     // 添加预约数据
@@ -125,12 +110,12 @@ async function bootstrap() {
 
     for (const bookingData of bookings) {
       const booking = await bookingsService.create(bookingData as any);
-      console.log(`预约 "${booking.customerName}" 创建成功`);
+      console.log(`预约 \"${booking.customerName}\" 创建成功`);
     }
 
-    // 添加咨询数据
-    console.log('添加咨询数据...');
-    const inquiries = [
+    // 添加合作申请数据
+    console.log('添加合作申请数据...');
+    const collaborationApplications = [
       {
         name: '王五',
         contact: 'wangwu@company.com',
@@ -141,24 +126,23 @@ async function bootstrap() {
       },
       {
         name: '赵六',
-        contact: 'zhaoliu@shop.com',
-        collaborationType: 1,
-        message: '我想批发采购贵馆的汉服产品，请问是否有折扣？',
+        contact: 'zhaoliu@event.com',
+        company: 'XX策划公司',
+        collaborationType: 2,
+        message: '我们正在寻找汉服供应商进行寄售合作。',
         status: 'contacted',
       },
     ];
 
-    for (const inquiryData of inquiries) {
-      const inquiry = await inquiriesService.create(inquiryData as any);
-      console.log(`咨询 "${inquiry.name}" 创建成功`);
+    for (const applicationData of collaborationApplications) {
+      const application = await collaborationService.create(applicationData as any);
+      console.log(`合作申请 \"${application.name}\" 创建成功`);
     }
-
-    console.log('种子数据填充完成！');
   } catch (error) {
-    console.error('填充种子数据时出错:', error);
+    console.error('种子数据填充失败:', error);
+    process.exit(1);
   } finally {
     await app.close();
-    process.exit(0);
   }
 }
 

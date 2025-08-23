@@ -1,18 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import {
-  IsString,
-  IsNumber,
-  IsArray,
-  IsOptional,
-  IsBoolean,
-  Min,
-  Max,
-  ArrayNotEmpty,
-  IsPositive,
-  ValidateNested,
-  IsNotEmpty,
-} from 'class-validator';
+import { IsString, IsNumber, IsArray, IsOptional, IsBoolean, Min, Max, ArrayNotEmpty, IsPositive, ValidateNested, IsNotEmpty } from 'class-validator';
 import { Type } from 'class-transformer';
+import { Category } from 'src/core/entities/category.entity';
 
 export class CreateProductDto {
   @ApiProperty({ description: '产品标题', example: '唐风齐胸襦裙 · 霓裳羽衣' })
@@ -113,7 +102,7 @@ export class UpdateProductDto {
   @ApiPropertyOptional({ description: '产品分类', example: '齐胸襦裙' })
   @IsString()
   @IsOptional()
-  category?: string;
+  category?: string | Category;
 
   @ApiPropertyOptional({ description: '朝代', example: 'tang' })
   @IsString()
