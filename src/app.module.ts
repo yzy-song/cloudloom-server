@@ -7,7 +7,6 @@
 // src/app.module.ts
 import { Module } from '@nestjs/common';
 import { APP_FILTER } from '@nestjs/core';
-import { AppLogger } from './utils/logger';
 import { AllExceptionsFilter } from './filters/all-exceptions.filter';
 
 import { TypeOrmModule } from '@nestjs/typeorm';

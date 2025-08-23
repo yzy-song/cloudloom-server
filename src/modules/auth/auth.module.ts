@@ -2,7 +2,7 @@
  * @Author: yzy
  * @Date: 2025-08-23 03:55:58
  * @LastEditors: yzy
- * @LastEditTime: 2025-08-23 06:59:03
+ * @LastEditTime: 2025-08-23 18:32:13
  */
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -13,7 +13,7 @@ import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { User } from '../../core/entities/user.entity';
 import { JwtStrategy } from './jwt.strategy';
-
+import { AppLogger } from '../../utils/logger';
 @Module({
   imports: [
     TypeOrmModule.forFeature([User]),
@@ -30,7 +30,7 @@ import { JwtStrategy } from './jwt.strategy';
     // 你也可以将 ConfigModule 设为全局，但这在这里不是必须的
     ConfigModule,
   ],
-  providers: [AuthService, JwtStrategy],
+  providers: [AuthService, JwtStrategy, AppLogger],
   controllers: [AuthController],
   exports: [AuthService, JwtModule],
 })

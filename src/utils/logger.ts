@@ -1,35 +1,29 @@
 import { LoggerService, Injectable, Scope } from '@nestjs/common';
-import * as winston from 'winston';
+import { createLogger, format, transports, Logger } from 'winston';
 import DailyRotateFile from 'winston-daily-rotate-file'; // 添加此行导入
+
+const { combine, timestamp, json, errors } = format;
 
 @Injectable({ scope: Scope.TRANSIENT })
 export class AppLogger implements LoggerService {
-  private logger: winston.Logger;
+  private logger: Logger;
   private context?: string;
 
   constructor() {
-    this.logger = winston.createLogger({
+    this.logger = createLogger({
       level: process.env.LOG_LEVEL || 'info',
-      format: winston.format.combine(winston.format.timestamp(), winston.format.json()),
+      format: combine(timestamp(), errors({ stack: true }), json()),
+      defaultMeta: { service: 'cloudloom' },
       transports: [
-        // 控制台输出（开发环境）
-        new winston.transports.Console({
-          format: winston.format.combine(winston.format.colorize(), winston.format.simple()),
+        new transports.Console({
+          format: combine(timestamp(), format.prettyPrint()),
         }),
-        // 每日轮转文件（生产环境）
         new DailyRotateFile({
           filename: 'logs/application-%DATE%.log',
           datePattern: 'YYYY-MM-DD',
-          maxSize: '20m',
-          maxFiles: '14d',
-        }),
-        // 错误日志单独存储
-        new DailyRotateFile({
-          filename: 'logs/error-%DATE%.log',
-          datePattern: 'YYYY-MM-DD',
-          level: 'error',
-          maxSize: '20m',
+          maxSize: '100m',
           maxFiles: '30d',
+          zippedArchive: true, // 压缩旧日志
         }),
       ],
     });

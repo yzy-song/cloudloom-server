@@ -7,16 +7,17 @@ import { Category } from '../../core/entities/category.entity';
 import { CreateProductDto, UpdateProductDto, ProductQueryDto } from './dto/create-product.dto';
 
 import { AppLogger } from '../../utils/logger';
-
 @Injectable()
 export class ProductsService {
-  private readonly logger = new AppLogger();
   constructor(
     @InjectRepository(Product)
     private productsRepository: Repository<Product>,
     @InjectRepository(Category)
-    private categoriesRepository: Repository<Category>
-  ) {}
+    private categoriesRepository: Repository<Category>,
+    private readonly logger: AppLogger // 依赖注入
+  ) {
+    this.logger.setContext(ProductsService.name);
+  }
 
   async create(createProductDto: CreateProductDto): Promise<Product> {
     try {

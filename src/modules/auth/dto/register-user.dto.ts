@@ -2,7 +2,7 @@
  * @Author: yzy
  * @Date: 2025-08-23 03:56:41
  * @LastEditors: yzy
- * @LastEditTime: 2025-08-23 06:11:27
+ * @LastEditTime: 2025-08-23 17:52:51
  */
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsString, IsNotEmpty, IsEmail, MinLength, MaxLength } from 'class-validator';
@@ -16,8 +16,6 @@ export class RegisterUserDto {
 
   @ApiProperty({ description: '头像' })
   @IsString()
-  @IsNotEmpty()
-  @MaxLength(100)
   avatarUrl: string;
 
   @ApiProperty({ description: '邮箱', example: 'test@example.com' })
