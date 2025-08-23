@@ -2,9 +2,9 @@
  * @Author: yzy
  * @Date: 2025-08-23 03:56:23
  * @LastEditors: yzy
- * @LastEditTime: 2025-08-23 19:20:45
+ * @LastEditTime: 2025-08-23 23:29:56
  */
-import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, ConflictException, Inject } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -12,15 +12,20 @@ import { User } from '../../core/entities/user.entity';
 import { RegisterUserDto } from './dto/register-user.dto';
 import { LoginUserDto } from './dto/login-user.dto';
 import * as bcrypt from 'bcryptjs';
+import { type Cache } from 'cache-manager';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
 
 import { AppLogger } from '../../utils/logger';
-import { isEmail } from 'class-validator';
 
 @Injectable()
 export class AuthService {
   constructor(
     @InjectRepository(User)
     private usersRepository: Repository<User>,
+
+    @Inject(CACHE_MANAGER) // ✅ 放在 cacheManager 前面
+    private cacheManager: Cache,
+
     private jwtService: JwtService,
     private readonly logger: AppLogger // 依赖注入
   ) {
@@ -52,12 +57,13 @@ export class AuthService {
     return this.usersRepository.save(newUser);
   }
 
-  async login(loginUserDto: LoginUserDto): Promise<{ accessToken: string }> {
+  async login(loginUserDto: LoginUserDto): Promise<{ accessToken: string; user: User }> {
     try {
       const user = await this.validateUser(loginUserDto.identifier, loginUserDto.password);
       const payload = { username: user.username, sub: user.id };
       return {
         accessToken: this.jwtService.sign(payload),
+        user: user, // 返回用户信息
       };
     } catch (error) {
       // 直接抛出 validateUser 中的错误
@@ -78,8 +84,6 @@ export class AuthService {
     }
 
     // 用户存在但密码错误
-    this.logger.debug(password);
-    this.logger.debug(user.passwordHash);
     if (!(await bcrypt.compare(password, user.passwordHash))) {
       throw new UnauthorizedException('密码错误');
     }
@@ -87,5 +91,19 @@ export class AuthService {
     // 验证成功，返回用户信息（不包含密码）
     const { passwordHash: _, ...result } = user;
     return result;
+  }
+
+  async addToBlacklist(token: string): Promise<void> {
+    try {
+      const decoded = this.jwtService.decode(token) as { exp: number };
+      if (decoded && decoded.exp) {
+        const ttl = decoded.exp - Math.floor(Date.now() / 1000);
+        if (ttl > 0) {
+          await this.cacheManager.set(`blacklist:${token}`, '1', ttl * 1000);
+        }
+      }
+    } catch (error) {
+      throw new Error('Token 解析失败');
+    }
   }
 }

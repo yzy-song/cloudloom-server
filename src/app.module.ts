@@ -2,7 +2,7 @@
  * @Author: yzy
  * @Date: 2025-08-19 21:45:37
  * @LastEditors: yzy
- * @LastEditTime: 2025-08-23 10:23:23
+ * @LastEditTime: 2025-08-23 23:25:55
  */
 // src/app.module.ts
 import { Module } from '@nestjs/common';
@@ -27,6 +27,7 @@ import { CollaborationApplication } from './core/entities/collaboration-applicat
 // import { UserFavorite } from './core/entities/user-favorite.entity';
 // import { RentalPeriod } from './core/entities/rental-period.entity';
 // import { ProductRentalPeriod } from './core/entities/product-rental-period.entity';
+import { LoggerModule } from './utils/logger.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -57,6 +58,7 @@ import { CollaborationApplication } from './core/entities/collaboration-applicat
       }),
       inject: [ConfigService],
     }),
+    LoggerModule,
     AuthModule,
     ProductsModule,
     BookingsModule,

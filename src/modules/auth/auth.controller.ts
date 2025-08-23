@@ -2,7 +2,7 @@
  * @Author: yzy
  * @Date: 2025-08-23 03:56:13
  * @LastEditors: yzy
- * @LastEditTime: 2025-08-23 05:42:32
+ * @LastEditTime: 2025-08-23 23:01:21
  */
 import { Controller, Post, Body, UseGuards, Request, HttpStatus, HttpCode } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
@@ -10,6 +10,7 @@ import { AuthService } from './auth.service';
 import { RegisterUserDto } from './dto/register-user.dto';
 import { LoginUserDto } from './dto/login-user.dto';
 import { User } from '../../core/entities/user.entity';
+import { AuthGuard } from '@nestjs/passport';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -39,5 +40,14 @@ export class AuthController {
   @ApiResponse({ status: 401, description: '无效的凭证' })
   async login(@Body() loginUserDto: LoginUserDto): Promise<{ accessToken: string }> {
     return this.authService.login(loginUserDto);
+  }
+
+  @Post('logout')
+  @UseGuards(AuthGuard('jwt'))
+  async logout(@Request() req) {
+    const token = req.headers.authorization?.split(' ')[1];
+    // 将token加入黑名单（存储到Redis或数据库中）
+    await this.authService.addToBlacklist(token);
+    return { message: '成功登出' };
   }
 }

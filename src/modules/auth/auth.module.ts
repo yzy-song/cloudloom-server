@@ -2,18 +2,19 @@
  * @Author: yzy
  * @Date: 2025-08-23 03:55:58
  * @LastEditors: yzy
- * @LastEditTime: 2025-08-23 18:32:13
+ * @LastEditTime: 2025-08-23 23:28:04
  */
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config'; // 引入 ConfigModule 和 ConfigService
+// ✅ 导入 CacheModule
+import { CacheModule } from '@nestjs/cache-manager';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { User } from '../../core/entities/user.entity';
 import { JwtStrategy } from './jwt.strategy';
-import { AppLogger } from '../../utils/logger';
 @Module({
   imports: [
     TypeOrmModule.forFeature([User]),
@@ -29,8 +30,12 @@ import { AppLogger } from '../../utils/logger';
     }),
     // 你也可以将 ConfigModule 设为全局，但这在这里不是必须的
     ConfigModule,
+    // ✅ 在这里添加 CacheModule
+    CacheModule.register({
+      ttl: 60 * 60 * 1000, // 缓存一小时，你可以根据需要调整
+    }),
   ],
-  providers: [AuthService, JwtStrategy, AppLogger],
+  providers: [AuthService, JwtStrategy],
   controllers: [AuthController],
   exports: [AuthService, JwtModule],
 })
