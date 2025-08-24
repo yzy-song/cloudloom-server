@@ -4,8 +4,8 @@ import { Repository, In, Between, MoreThanOrEqual, LessThanOrEqual } from 'typeo
 import { Booking, BookingStatus } from '../../core/entities/booking.entity';
 import { Product } from '../../core/entities/product.entity';
 import { NotificationsService } from '../notifications/notifications.service';
-import { CreateBookingDto, UpdateBookingDto, BookingQueryDto } from './dto/create-booking.dto';
-
+import { CreateBookingDto, UpdateBookingDto } from './dto/create-booking.dto';
+import { BookingQueryDto } from './dto/booking-query.dto';
 import { AppLogger } from '../../utils/logger';
 
 @Injectable()
@@ -40,7 +40,6 @@ export class BookingsService {
   async findByBookingNumber(bookingNumber: string): Promise<Booking> {
     const booking = await this.bookingsRepository.findOne({
       where: { bookingNumber },
-      relations: ['product'],
     });
 
     if (!booking) {
@@ -100,7 +99,6 @@ export class BookingsService {
   async cancel(bookingNumber: string): Promise<Booking> {
     const booking = await this.bookingsRepository.findOne({
       where: { bookingNumber },
-      // 移除 relations: ['product']，因为 Booking 实体中没有 product 关系
     });
 
     if (!booking) {
@@ -119,35 +117,48 @@ export class BookingsService {
   }
 
   async findAll(query: BookingQueryDto): Promise<{ data: Booking[]; count: number; page: number; limit: number }> {
-    const { page = 1, limit = 1, status, date, customer } = query;
+    const { page = 1, limit = 10, status, startDate, endDate, customerName, customerEmail, bookingType, order = 'DESC' } = query;
+
     const skip = (page - 1) * limit;
 
-    const queryBuilder = this.bookingsRepository.createQueryBuilder('booking').leftJoinAndSelect('booking.product', 'product');
-
+    const queryBuilder = this.bookingsRepository.createQueryBuilder('booking');
     // 添加筛选条件
     if (status) {
       queryBuilder.andWhere('booking.status = :status', { status });
     }
 
-    if (date) {
-      const startDate = new Date(date);
-      const endDate = new Date(date);
-      endDate.setDate(endDate.getDate() + 1);
+    if (bookingType) {
+      queryBuilder.andWhere('booking.bookingType = :bookingType', { bookingType });
+    }
 
-      queryBuilder.andWhere('booking.bookingDate >= :startDate AND booking.bookingDate < :endDate', {
+    if (startDate && endDate) {
+      queryBuilder.andWhere('booking.bookingDate BETWEEN :startDate AND :endDate', {
         startDate,
         endDate,
       });
+    } else if (startDate) {
+      queryBuilder.andWhere('booking.bookingDate >= :startDate', { startDate });
+    } else if (endDate) {
+      queryBuilder.andWhere('booking.bookingDate <= :endDate', { endDate });
     }
 
-    if (customer) {
-      queryBuilder.andWhere('booking.customerFullname ILIKE :customer', {
-        customer: `%${customer}%`,
+    if (customerName) {
+      queryBuilder.andWhere('booking.customerFullname ILIKE :customerName', {
+        customerName: `%${customerName}%`,
       });
     }
 
-    // 按时间倒序排列
-    queryBuilder.orderBy('booking.createdAt', 'DESC');
+    if (customerEmail) {
+      queryBuilder.andWhere('booking.customerEmail ILIKE :customerEmail', {
+        customerEmail: `%${customerEmail}%`,
+      });
+    }
+
+    // 过滤已删除的记录
+    queryBuilder.andWhere('booking.status != :deletedStatus', { deletedStatus: 'deleted' });
+
+    // 排序
+    queryBuilder.orderBy('booking.createdAt', order);
 
     // 获取总数
     const total = await queryBuilder.getCount();
@@ -165,20 +176,62 @@ export class BookingsService {
     };
   }
 
-  async findOne(id: string): Promise<Booking> {
+  async findOne(bookingNumber: string): Promise<Booking> {
     const booking = await this.bookingsRepository.findOne({
-      where: { id },
-      relations: ['product'],
+      where: { bookingNumber },
     });
 
     if (!booking) {
-      throw new NotFoundException(`预约 #${id} 未找到`);
+      throw new NotFoundException(`预约号 #${bookingNumber} 未找到`);
     }
 
     return booking;
   }
 
-  // ... existing imports ...
+  async searchBookings(query: BookingQueryDto): Promise<{ data: Booking[]; count: number }> {
+    const { status, startDate, endDate, customerName, customerEmail, bookingType } = query;
+
+    const queryBuilder = this.bookingsRepository.createQueryBuilder('booking');
+
+    // 添加筛选条件（修复：使用 andWhere 而不是 if 条件）
+    if (status) {
+      queryBuilder.andWhere('booking.status = :status', { status });
+    }
+
+    if (bookingType) {
+      queryBuilder.andWhere('booking.bookingType = :bookingType', { bookingType });
+    }
+
+    if (startDate && endDate) {
+      queryBuilder.andWhere('booking.bookingDate BETWEEN :startDate AND :endDate', {
+        startDate,
+        endDate,
+      });
+    } else if (startDate) {
+      queryBuilder.andWhere('booking.bookingDate >= :startDate', { startDate });
+    } else if (endDate) {
+      queryBuilder.andWhere('booking.bookingDate <= :endDate', { endDate });
+    }
+
+    if (customerName) {
+      queryBuilder.andWhere('booking.customerFullname ILIKE :customerName', {
+        customerName: `%${customerName}%`,
+      });
+    }
+
+    if (customerEmail) {
+      queryBuilder.andWhere('booking.customerEmail ILIKE :customerEmail', {
+        customerEmail: `%${customerEmail}%`,
+      });
+    }
+
+    // 过滤已删除的记录
+    queryBuilder.andWhere('booking.status != :deletedStatus', { deletedStatus: 'deleted' });
+
+    const [data, count] = await queryBuilder.getManyAndCount();
+
+    return { data, count };
+  }
 
   async update(bookingNumber: string, updateBookingDto: UpdateBookingDto): Promise<Booking> {
     const booking = await this.bookingsRepository.findOne({
@@ -205,7 +258,7 @@ export class BookingsService {
       booking.customerPhone = updateBookingDto.customerPhone;
     }
     if (updateBookingDto.bookingDate !== undefined) {
-      booking.bookingDate = new Date(updateBookingDto.bookingDate);
+      booking.bookingDate = updateBookingDto.bookingDate;
     }
     if (updateBookingDto.bookingTime !== undefined) {
       booking.bookingTime = updateBookingDto.bookingTime;
@@ -231,7 +284,7 @@ export class BookingsService {
     }
 
     // 自动更新更新时间
-    booking.updateAt = new Date();
+    booking.updatedAt = new Date();
 
     return await this.bookingsRepository.save(booking);
   }
@@ -257,18 +310,13 @@ export class BookingsService {
   }
 
   async getDailyBookings(date: string): Promise<Booking[]> {
-    const startDate = new Date(date);
-    const endDate = new Date(date);
-    endDate.setDate(endDate.getDate() + 1);
-
     return this.bookingsRepository
       .createQueryBuilder('booking')
-      .leftJoinAndSelect('booking.product', 'product')
-      .where('booking.bookingDate >= :startDate AND booking.bookingDate < :endDate', {
-        startDate,
-        endDate,
+      .where('booking.bookingDate = :date', { date })
+      .andWhere('booking.status NOT IN (:...excludedStatuses)', {
+        excludedStatuses: ['cancelled', 'no_show', 'deleted'],
       })
-      .orderBy('booking.timeSlot', 'ASC')
+      .orderBy('booking.bookingTime', 'ASC')
       .getMany();
   }
 

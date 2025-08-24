@@ -1,6 +1,7 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, Query, ParseIntPipe, HttpCode, HttpStatus } from '@nestjs/common';
 import { BookingsService } from './bookings.service';
-import { CreateBookingDto, UpdateBookingDto, BookingQueryDto } from './dto/create-booking.dto';
+import { CreateBookingDto, UpdateBookingDto } from './dto/create-booking.dto';
+import { BookingQueryDto } from './dto/booking-query.dto';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { Booking } from '../../core/entities/booking.entity';
 
@@ -43,33 +44,35 @@ export class BookingsController {
     return this.bookingsService.cancel(id);
   }
 
-  @Get('number/:bookingNumber')
-  async findByBookingNumber(@Param('bookingNumber') bookingNumber: string) {
-    return this.bookingsService.findByBookingNumber(bookingNumber);
-  }
-
   @Get('list')
-  @ApiOperation({ summary: '获取预约列表' })
+  @ApiOperation({ summary: '获取预约列表（支持高级筛选）' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
-  @ApiQuery({ name: 'status', required: false, type: String })
-  @ApiQuery({ name: 'date', required: false, type: String })
-  @ApiQuery({ name: 'customer', required: false, type: String })
+  @ApiQuery({ name: 'status', required: false, enum: ['pending', 'confirmed', 'completed', 'cancelled', 'no_show'] })
+  @ApiQuery({ name: 'startDate', required: false, type: String })
+  @ApiQuery({ name: 'endDate', required: false, type: String })
+  @ApiQuery({ name: 'customerName', required: false, type: String })
+  @ApiQuery({ name: 'customerEmail', required: false, type: String })
+  @ApiQuery({ name: 'bookingType', required: false, enum: ['standard', 'time_slot_only'] })
+  @ApiQuery({ name: 'order', required: false, enum: ['ASC', 'DESC'] })
   @ApiResponse({
     status: 200,
     description: '返回预约列表',
-    schema: {
-      type: 'object',
-      properties: {
-        data: { type: 'array', items: { $ref: '#/components/schemas/Booking' } },
-        count: { type: 'number' },
-        page: { type: 'number' },
-        limit: { type: 'number' },
-      },
-    },
+    type: [Booking],
   })
   findAll(@Query() query: BookingQueryDto) {
     return this.bookingsService.findAll(query);
+  }
+
+  @Get('search')
+  @ApiOperation({ summary: '高级搜索预约' })
+  @ApiResponse({
+    status: 200,
+    description: '返回搜索结果',
+    type: [Booking],
+  })
+  search(@Query() query: BookingQueryDto) {
+    return this.bookingsService.searchBookings(query);
   }
 
   @Get('available-slots/:productId/:date')
@@ -121,9 +124,9 @@ export class BookingsController {
     return this.bookingsService.getBookingStats();
   }
 
-  @Get('detail/:id')
+  @Get('detail/:bookingNumber')
   @ApiOperation({ summary: '根据ID获取预约详情' })
-  @ApiParam({ name: 'id', description: '预约ID' })
+  @ApiParam({ name: 'bookingNumber', description: '预约ID' })
   @ApiResponse({
     status: 200,
     description: '返回预约详情',
@@ -133,8 +136,8 @@ export class BookingsController {
     status: 404,
     description: '预约未找到',
   })
-  findOne(@Param('id', ParseIntPipe) id: string) {
-    return this.bookingsService.findOne(id);
+  async getBookingDetail(@Param('bookingNumber') bookingNumber: string) {
+    return this.bookingsService.findByBookingNumber(bookingNumber);
   }
 
   @Patch('update/:id')

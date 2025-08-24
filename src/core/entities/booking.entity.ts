@@ -2,7 +2,7 @@
  * @Author: yzy
  * @Date: 2025-08-19 22:52:47
  * @LastEditors: yzy
- * @LastEditTime: 2025-08-24 13:00:06
+ * @LastEditTime: 2025-08-24 14:29:04
  */
 
 import { Entity, PrimaryGeneratedColumn, Column, Index } from 'typeorm';
@@ -36,7 +36,7 @@ export class Booking {
   notes?: string;
 
   @Column({ name: 'booking_date', type: 'date' })
-  bookingDate: Date;
+  bookingDate: string;
 
   @Column({ name: 'booking_time', type: 'time' })
   bookingTime: string;
@@ -64,7 +64,7 @@ export class Booking {
   createdAt: Date;
 
   @Column({ name: 'update_at', type: 'timestamptz', default: () => 'NOW()' })
-  updateAt: Date;
+  updatedAt: Date;
 
   @Column({ name: 'time_slot', type: 'varchar', length: 50, nullable: true })
   timeSlot?: string;

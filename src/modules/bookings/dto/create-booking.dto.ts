@@ -113,33 +113,3 @@ export class UpdateBookingDto extends PartialType(CreateBookingDto) {
   @IsOptional()
   status?: BookingStatus;
 }
-
-export class BookingQueryDto {
-  @ApiPropertyOptional({ description: '页码', example: 1 })
-  @IsNumber()
-  @Min(1)
-  @IsOptional()
-  page?: number = 1;
-
-  @ApiPropertyOptional({ description: '每页数量', example: 10 })
-  @IsNumber()
-  @Min(1)
-  @Max(100)
-  @IsOptional()
-  limit?: number = 10;
-
-  @ApiPropertyOptional({ description: '状态筛选', example: 'pending' })
-  @IsString()
-  @IsOptional()
-  status?: string;
-
-  @ApiPropertyOptional({ description: '日期筛选 (YYYY-MM-DD)', example: '2024-03-15' })
-  @IsDateString()
-  @IsOptional()
-  date?: string;
-
-  @ApiPropertyOptional({ description: '客户姓名搜索', example: '张三' })
-  @IsString()
-  @IsOptional()
-  customer?: string;
-}
