@@ -2,15 +2,13 @@
  * @Author: yzy
  * @Date: 2025-08-23 03:57:05
  * @LastEditors: yzy
- * @LastEditTime: 2025-08-23 06:47:12
+ * @LastEditTime: 2025-08-24 22:51:29
  */
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
-import { AuthService } from './auth.service';
 import { ConfigService } from '@nestjs/config';
 
-// ... existing imports ...
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from '../../core/entities/user.entity';

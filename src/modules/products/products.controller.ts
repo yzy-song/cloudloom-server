@@ -1,140 +1,59 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Patch,
-  Param,
-  Delete,
-  Query,
-  ParseIntPipe,
-  HttpCode,
-  HttpStatus,
-} from '@nestjs/common';
+/*
+ * @Author: yzy
+ * @Date: 2025-08-19 23:12:58
+ * @LastEditors: yzy
+ * @LastEditTime: 2025-08-25 00:16:34
+ */
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, ParseIntPipe } from '@nestjs/common';
 import { ProductsService } from './products.service';
-import { CreateProductDto, UpdateProductDto, ProductQueryDto } from './dto/create-product.dto';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
-import { Product } from '../../core/entities/product.entity';
+import { CreateProductDto } from './dto/create-product.dto';
+import { UpdateProductDto } from './dto/update-product.dto';
 
-@ApiTags('products')
 @Controller('products')
 export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
 
+  // 创建商品
   @Post()
-  @ApiOperation({ summary: '创建新产品' })
-  @ApiResponse({
-    status: 201,
-    description: '产品创建成功',
-    type: Product,
-  })
-  @ApiResponse({
-    status: 400,
-    description: '请求参数错误',
-  })
   create(@Body() createProductDto: CreateProductDto) {
     return this.productsService.create(createProductDto);
   }
 
+  // 商品列表，支持分页、分类、上下架筛选
   @Get()
-  @ApiOperation({ summary: '获取产品列表' })
-  @ApiQuery({ name: 'page', required: false, type: Number })
-  @ApiQuery({ name: 'limit', required: false, type: Number })
-  @ApiQuery({ name: 'dynasty', required: false, type: String })
-  @ApiQuery({ name: 'category', required: false, type: String })
-  @ApiQuery({ name: 'tag', required: false, type: String })
-  @ApiQuery({ name: 'search', required: false, type: String })
-  @ApiQuery({ name: 'sort', required: false, type: String })
-  @ApiQuery({ name: 'minPrice', required: false, type: Number })
-  @ApiQuery({ name: 'maxPrice', required: false, type: Number })
-  @ApiResponse({
-    status: 200,
-    description: '返回产品列表',
-    schema: {
-      type: 'object',
-      properties: {
-        data: { type: 'array', items: { $ref: '#/components/schemas/Product' } },
-        count: { type: 'number' },
-        page: { type: 'number' },
-        limit: { type: 'number' },
-      },
-    },
-  })
-  findAll(@Query() query: ProductQueryDto) {
-    return this.productsService.findAll(query);
+  findAll(@Query('page', ParseIntPipe) page: number = 1, @Query('limit', ParseIntPipe) limit: number = 10, @Query('categoryId') categoryId?: number, @Query('isActive') isActive?: boolean, @Query('tags') tags?: string) {
+    // 支持标签筛选
+    const tagArray = tags ? tags.split(',') : undefined;
+    return this.productsService.findAll(page, limit, categoryId, isActive, tagArray);
   }
 
-  @Get('options/dynasties')
-  @ApiOperation({ summary: '获取所有朝代选项' })
-  @ApiResponse({
-    status: 200,
-    description: '返回所有朝代选项',
-    type: [String],
-  })
-  getDynastyOptions() {
-    return this.productsService.getDynastyOptions();
-  }
-
-  @Get('options/categories')
-  @ApiOperation({ summary: '获取所有分类选项' })
-  @ApiResponse({
-    status: 200,
-    description: '返回所有分类选项',
-    type: [String],
-  })
-  getCategoryOptions() {
-    return this.productsService.getCategoryOptions();
-  }
-
+  // 商品详情
   @Get(':id')
-  @ApiOperation({ summary: '根据ID获取产品详情' })
-  @ApiParam({ name: 'id', description: '产品ID' })
-  @ApiResponse({
-    status: 200,
-    description: '返回产品详情',
-    type: Product,
-  })
-  @ApiResponse({
-    status: 404,
-    description: '产品未找到',
-  })
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.productsService.findOne(id);
   }
 
+  // 更新商品
   @Patch(':id')
-  @ApiOperation({ summary: '更新产品信息' })
-  @ApiParam({ name: 'id', description: '产品ID' })
-  @ApiResponse({
-    status: 200,
-    description: '产品更新成功',
-    type: Product,
-  })
-  @ApiResponse({
-    status: 404,
-    description: '产品未找到',
-  })
-  @ApiResponse({
-    status: 400,
-    description: '请求参数错误',
-  })
   update(@Param('id', ParseIntPipe) id: number, @Body() updateProductDto: UpdateProductDto) {
     return this.productsService.update(id, updateProductDto);
   }
 
+  // 删除商品
   @Delete(':id')
-  @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOperation({ summary: '删除产品' })
-  @ApiParam({ name: 'id', description: '产品ID' })
-  @ApiResponse({
-    status: 204,
-    description: '产品删除成功',
-  })
-  @ApiResponse({
-    status: 404,
-    description: '产品未找到',
-  })
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.productsService.remove(id);
+  }
+
+  // 修改库存
+  @Patch(':id/stock-quantity')
+  updateStock(@Param('id', ParseIntPipe) id: number, @Body('quantity', ParseIntPipe) quantity: number) {
+    return this.productsService.updateStock(id, quantity);
+  }
+
+  // 上下架（激活/禁用）
+  @Patch(':id/active')
+  updateActive(@Param('id', ParseIntPipe) id: number, @Body('isActive') isActive: boolean) {
+    return this.productsService.updateActiveStatus(id, isActive);
   }
 }

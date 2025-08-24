@@ -1,22 +1,19 @@
 /*
  * @Author: yzy
- * @Date: 2025-08-20 10:46:49
+ * @Date: 2025-08-23 04:09:02
  * @LastEditors: yzy
- * @LastEditTime: 2025-08-23 18:30:53
+ * @LastEditTime: 2025-08-24 23:24:30
  */
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { ProductsService } from '../products/products.service';
-import { ProductsController } from '../products/products.controller';
+import { ProductsService } from './products.service';
+import { ProductsController } from './products.controller';
 import { Product } from '../../core/entities/product.entity';
-import { Category } from '../../core/entities/category.entity';
-import { AppLogger } from '../../utils/logger';
+
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([Product, Category]), // Add Category to forFeature
-  ],
+  imports: [TypeOrmModule.forFeature([Product])],
   controllers: [ProductsController],
-  providers: [ProductsService, AppLogger],
+  providers: [ProductsService],
   exports: [ProductsService],
 })
 export class ProductsModule {}
