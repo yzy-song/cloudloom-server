@@ -19,67 +19,64 @@ export class BookingsService {
     private notificationsService: NotificationsService
   ) {}
 
-  async create(createBookingDto: CreateBookingDto): Promise<Booking> {
-    const { productId, bookingDate, timeSlot } = createBookingDto;
-
-    // 1. 检查产品是否存在且有库存
-    const product = await this.productsRepository.findOne({
-      where: { id: productId, isActive: true },
-    });
-
-    if (!product) {
-      throw new NotFoundException(`产品 #${productId} 未找到或已下架`);
-    }
-
-    if (product.stockQuantity < 1) {
-      throw new ConflictException(`产品 "${product.title}" 库存不足`);
-    }
-
-    // 2. 检查时间段是否已被预约（同一产品同一天同一时间段）
-    const existingBooking = await this.bookingsRepository.findOne({
+  // 新增：预约号生成服务
+  private async generateBookingNumber(): Promise<string> {
+    const date = new Date();
+    const dateStr = date.toISOString().slice(0, 10).replace(/-/g, '');
+    const count = await this.bookingsRepository.count({
       where: {
-        productId,
-        bookingDate: new Date(bookingDate),
-        timeSlot: timeSlot,
-        status: In(['pending', 'confirmed']), // 只检查有效状态的预约
+        createdAt: Between(new Date(date.setHours(0, 0, 0, 0)), new Date(date.setHours(23, 59, 59, 999))),
       },
     });
 
-    if (existingBooking) {
-      throw new ConflictException(`该时间段已被预约，请选择其他时间`);
+    return `IR-${dateStr}-${(count + 1).toString().padStart(3, '0')}`;
+  }
+
+  async findByBookingNumber(bookingNumber: string): Promise<Booking> {
+    const booking = await this.bookingsRepository.findOne({
+      where: { bookingNumber },
+      relations: ['product'],
+    });
+
+    if (!booking) {
+      throw new NotFoundException('预约不存在');
     }
 
-    // 3. 创建预约
-    try {
-      const booking = this.bookingsRepository.create({
-        ...createBookingDto,
-        bookingDate: new Date(bookingDate),
-        status: 'pending' as BookingStatus,
-      });
+    return booking;
+  }
 
-      const savedBooking = await this.bookingsRepository.save(booking);
+  async create(createBookingDto: CreateBookingDto): Promise<Booking> {
+    // 生成预约号
+    const bookingNumber = await this.generateBookingNumber();
 
-      await this.notificationsService.sendBookingConfirmation(savedBooking, product);
-
-      // 4. 减少产品库存（乐观锁处理）
-      await this.productsRepository
-        .createQueryBuilder()
-        .update(Product)
-        .set({
-          stockQuantity: () => 'stock_quantity - 1',
-          updatedAt: new Date(),
-        })
-        .where('id = :id AND stock_quantity > 0', { id: productId })
-        .execute();
-
-      return savedBooking;
-    } catch (error) {
-      this.logger.error('发送预约确认邮件失败', error.stack);
-      if (error.code === '23505') {
-        throw new ConflictException('预约冲突，请重试');
+    // 验证逻辑调整
+    if (createBookingDto.bookingType === 'standard') {
+      if (!createBookingDto.productId) {
+        throw new BadRequestException('标准预约需要选择产品');
       }
-      throw new BadRequestException('创建预约失败: ' + error.message);
+      // 检查产品存在性和库存
+      const product = await this.productsRepository.findOne({
+        where: { id: createBookingDto.productId },
+      });
+      if (!product) {
+        throw new NotFoundException('产品不存在');
+      }
+    } else if (createBookingDto.bookingType === 'time_slot_only') {
+      // 时段预留的特定验证
+      if (!createBookingDto.participants) {
+        throw new BadRequestException('时段预留需要提供预估人数');
+      }
     }
+
+    const booking = this.bookingsRepository.create({
+      bookingNumber,
+      ...createBookingDto,
+      bookingType: createBookingDto.bookingType as 'standard' | 'time_slot_only',
+
+      status: 'pending',
+    });
+
+    return await this.bookingsRepository.save(booking);
   }
 
   async findAll(query: BookingQueryDto): Promise<{ data: Booking[]; count: number; page: number; limit: number }> {
@@ -105,7 +102,7 @@ export class BookingsService {
     }
 
     if (customer) {
-      queryBuilder.andWhere('booking.fullName ILIKE :customer', {
+      queryBuilder.andWhere('booking.customerFullname ILIKE :customer', {
         customer: `%${customer}%`,
       });
     }

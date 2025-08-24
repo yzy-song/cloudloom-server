@@ -110,7 +110,7 @@ async function bootstrap() {
 
     for (const bookingData of bookings) {
       const booking = await bookingsService.create(bookingData as any);
-      console.log(`预约 \"${booking.fullName}\" 创建成功`);
+      console.log(`预约 \"${booking.customerFullname}\" 创建成功`);
     }
 
     // 添加合作申请数据

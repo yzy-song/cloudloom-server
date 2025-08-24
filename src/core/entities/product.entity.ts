@@ -2,7 +2,7 @@
  * @Author: yzy
  * @Date: 2025-08-19 22:52:00
  * @LastEditors: yzy
- * @LastEditTime: 2025-08-23 09:42:07
+ * @LastEditTime: 2025-08-24 09:01:00
  */
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, Index, ManyToOne, OneToMany, JoinColumn } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
@@ -85,6 +85,6 @@ export class Product {
   @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz', default: () => 'NOW()' })
   updatedAt: Date;
 
-  @OneToMany(() => Booking, booking => booking.product)
+  @OneToMany(() => Booking, booking => booking.productId)
   bookings: Booking[];
 }

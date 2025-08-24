@@ -32,6 +32,11 @@ export class BookingsController {
     return this.bookingsService.create(createBookingDto);
   }
 
+  @Get('number/:bookingNumber')
+  async findByBookingNumber(@Param('bookingNumber') bookingNumber: string) {
+    return this.bookingsService.findByBookingNumber(bookingNumber);
+  }
+
   @Get()
   @ApiOperation({ summary: '获取预约列表' })
   @ApiQuery({ name: 'page', required: false, type: Number })

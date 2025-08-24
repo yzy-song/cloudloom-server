@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsNumber, IsOptional, IsDateString, IsEnum, IsNotEmpty, Min, Max } from 'class-validator';
+import { IsString, IsNumber, IsOptional, IsDateString, IsIn, IsEnum, IsNotEmpty, Min, Max } from 'class-validator';
 
 export class CreateBookingDto {
   @ApiProperty({ description: '客户姓名', example: '张三' })
@@ -12,14 +12,15 @@ export class CreateBookingDto {
   @IsNotEmpty()
   contactInfo: string;
 
-  @ApiProperty({ description: '产品ID', example: 1 })
-  @IsNumber()
-  productId: number;
-
-  @ApiProperty({ description: '选择尺寸', example: 'M' })
+  @ApiPropertyOptional({ description: '电话号码', example: '+353 123456789' })
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  selectedSize: string;
+  phone?: string;
+
+  @ApiPropertyOptional({ description: '产品ID（标准预约时需要）', example: 1 })
+  @IsOptional()
+  @IsNumber()
+  productId?: number;
 
   @ApiProperty({ description: '预约日期 (YYYY-MM-DD)', example: '2024-03-15' })
   @IsDateString()
@@ -30,14 +31,32 @@ export class CreateBookingDto {
   @IsNotEmpty()
   timeSlot: string;
 
-  @ApiPropertyOptional({ description: '备注', example: '需要儿童尺寸' })
-  @IsString()
-  @IsOptional()
-  notes?: string;
+  @ApiProperty({ description: '参与人数', example: 2 })
+  @IsNumber()
+  participants: number;
 
   @ApiProperty({ description: '总价格', example: 89.99 })
   @IsNumber()
-  totalPrice: number;
+  totalAmount: number;
+
+  @ApiPropertyOptional({ description: '备注', example: '需要儿童尺寸' })
+  @IsOptional()
+  @IsString()
+  notes?: string;
+
+  @ApiPropertyOptional({
+    description: '预约类型 (standard-标准预约, time_slot_only-时段预留)',
+    example: 'standard',
+    default: 'standard',
+  })
+  @IsOptional()
+  @IsIn(['standard', 'time_slot_only'])
+  bookingType?: string;
+
+  @ApiPropertyOptional({ description: '紧急联系人', example: '李四 +353 987654321' })
+  @IsOptional()
+  @IsString()
+  emergencyContact?: string;
 }
 
 export class UpdateBookingDto {
@@ -64,7 +83,7 @@ export class UpdateBookingDto {
   @ApiPropertyOptional({ description: '预约日期 (YYYY-MM-DD)', example: '2024-03-15' })
   @IsDateString()
   @IsOptional()
-  bookingDate?: string;
+  bookingDate: string;
 
   @ApiPropertyOptional({ description: '时间段', example: '10:00 - 11:30' })
   @IsString()

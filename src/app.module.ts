@@ -2,7 +2,7 @@
  * @Author: yzy
  * @Date: 2025-08-19 21:45:37
  * @LastEditors: yzy
- * @LastEditTime: 2025-08-23 23:25:55
+ * @LastEditTime: 2025-08-24 09:35:43
  */
 // src/app.module.ts
 import { Module } from '@nestjs/common';
@@ -35,7 +35,6 @@ import { LoggerModule } from './utils/logger.module';
       envFilePath: '.env',
     }),
     TypeOrmModule.forRootAsync({
-      imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
         type: 'postgres',
         host: configService.get<string>('DB_HOST'),
@@ -43,16 +42,7 @@ import { LoggerModule } from './utils/logger.module';
         username: configService.get<string>('DB_USERNAME'),
         password: configService.get<string>('DB_PASSWORD'),
         database: configService.get<string>('DB_DATABASE'),
-        entities: [
-          User,
-          Booking,
-          Product,
-          Category,
-          CollaborationApplication, // 使用新实体
-          // UserFavorite,
-          // RentalPeriod,
-          // ProductRentalPeriod,
-        ],
+        entities: [__dirname + '/core/entities/*.entity{.ts,.js}'],
         synchronize: configService.get('NODE_ENV') === 'development', // 生产环境必须禁用
         migrationsRun: configService.get('NODE_ENV') !== 'development',
       }),
