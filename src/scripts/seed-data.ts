@@ -86,7 +86,7 @@ async function bootstrap() {
     console.log('添加预约数据...');
     const bookings = [
       {
-        customerName: '张三',
+        fullName: '张三',
         contactInfo: 'zhangsan@email.com',
         productId: createdProducts[0].id,
         selectedSize: 'M',
@@ -97,7 +97,7 @@ async function bootstrap() {
         status: 'confirmed',
       },
       {
-        customerName: '李四',
+        fullName: '李四',
         contactInfo: 'lisi@email.com',
         productId: createdProducts[1].id,
         selectedSize: 'L',
@@ -110,7 +110,7 @@ async function bootstrap() {
 
     for (const bookingData of bookings) {
       const booking = await bookingsService.create(bookingData as any);
-      console.log(`预约 \"${booking.customerName}\" 创建成功`);
+      console.log(`预约 \"${booking.fullName}\" 创建成功`);
     }
 
     // 添加合作申请数据

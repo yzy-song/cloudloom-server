@@ -33,7 +33,7 @@ describe('BookingsController (e2e)', () => {
       .post('/bookings')
       .set('Authorization', `Bearer ${authToken}`)
       .send({
-        customerName: '测试用户',
+        fullName: '测试用户',
         contactInfo: 'test@example.com',
         productId: 1,
         selectedSize: 'M',
@@ -44,7 +44,7 @@ describe('BookingsController (e2e)', () => {
       .expect(201)
       .expect(res => {
         expect(res.body.id).toBeDefined();
-        expect(res.body.customerName).toBe('测试用户');
+        expect(res.body.fullName).toBe('测试用户');
       });
   });
 

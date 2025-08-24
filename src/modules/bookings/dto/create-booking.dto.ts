@@ -5,7 +5,7 @@ export class CreateBookingDto {
   @ApiProperty({ description: '客户姓名', example: '张三' })
   @IsString()
   @IsNotEmpty()
-  customerName: string;
+  fullName: string;
 
   @ApiProperty({ description: '联系方式', example: 'zhangsan@email.com' })
   @IsString()
@@ -44,7 +44,7 @@ export class UpdateBookingDto {
   @ApiPropertyOptional({ description: '客户姓名', example: '张三' })
   @IsString()
   @IsOptional()
-  customerName?: string;
+  fullName?: string;
 
   @ApiPropertyOptional({ description: '联系方式', example: 'zhangsan@email.com' })
   @IsString()

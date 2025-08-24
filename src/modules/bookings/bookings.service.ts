@@ -105,7 +105,7 @@ export class BookingsService {
     }
 
     if (customer) {
-      queryBuilder.andWhere('booking.customerName ILIKE :customer', {
+      queryBuilder.andWhere('booking.fullName ILIKE :customer', {
         customer: `%${customer}%`,
       });
     }

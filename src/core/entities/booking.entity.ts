@@ -2,7 +2,7 @@
  * @Author: yzy
  * @Date: 2025-08-19 22:52:47
  * @LastEditors: yzy
- * @LastEditTime: 2025-08-23 08:53:13
+ * @LastEditTime: 2025-08-23 23:58:26
  */
 
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, Index } from 'typeorm';
@@ -24,11 +24,11 @@ export class Booking {
   userId: string;
 
   @ApiProperty({ description: '客户姓名' })
-  @Column({ name: 'customer_username', length: 100 }) // 修改长度为100
-  customerName: string;
+  @Column({ name: 'customer_fullname', length: 50 }) // 修改长度为50
+  fullName: string;
 
   @ApiProperty({ description: '客户邮箱' })
-  @Column({ name: 'customer_email', length: 255 })
+  @Column({ name: 'customer_email', length: 100 })
   customerEmail: string;
 
   @ApiProperty({ description: '客户电话' })
