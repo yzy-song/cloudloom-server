@@ -39,7 +39,7 @@ describe('BookingsController (e2e)', () => {
         selectedSize: 'M',
         bookingDate: '2024-03-20',
         timeSlot: '10:00 - 11:30',
-        totalPrice: 89.99,
+        totalAmount: 89.99,
       })
       .expect(201)
       .expect(res => {

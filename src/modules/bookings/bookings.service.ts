@@ -3,33 +3,38 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In, Between, MoreThanOrEqual, LessThanOrEqual } from 'typeorm';
 import { Booking, BookingStatus } from '../../core/entities/booking.entity';
 import { Product } from '../../core/entities/product.entity';
-// 在文件顶部导入 NotificationsService
 import { NotificationsService } from '../notifications/notifications.service';
 import { CreateBookingDto, UpdateBookingDto, BookingQueryDto } from './dto/create-booking.dto';
 
+import { AppLogger } from '../../utils/logger';
+
 @Injectable()
 export class BookingsService {
-  private readonly logger = new Logger(BookingsService.name);
-
   constructor(
     @InjectRepository(Booking)
     private bookingsRepository: Repository<Booking>,
     @InjectRepository(Product)
     private productsRepository: Repository<Product>,
-    private notificationsService: NotificationsService
-  ) {}
+    private notificationsService: NotificationsService,
+    private readonly logger: AppLogger // 依赖注入
+  ) {
+    this.logger.setContext(BookingsService.name);
+  }
 
   // 新增：预约号生成服务
   private async generateBookingNumber(): Promise<string> {
     const date = new Date();
     const dateStr = date.toISOString().slice(0, 10).replace(/-/g, '');
-    const count = await this.bookingsRepository.count({
-      where: {
-        createdAt: Between(new Date(date.setHours(0, 0, 0, 0)), new Date(date.setHours(23, 59, 59, 999))),
-      },
-    });
 
-    return `IR-${dateStr}-${(count + 1).toString().padStart(3, '0')}`;
+    // 使用数据库的原子性操作生成唯一序号
+    const result = await this.bookingsRepository.query(
+      `SELECT COALESCE(MAX(SUBSTRING(booking_number FROM LENGTH('IR-${dateStr}-')+1)::INTEGER), 0) + 1 AS next_val 
+     FROM bookings 
+     WHERE booking_number LIKE 'IR-${dateStr}-%'`
+    );
+
+    const nextVal = result[0].next_val;
+    return `IR-${dateStr}-${nextVal.toString().padStart(3, '0')}`;
   }
 
   async findByBookingNumber(bookingNumber: string): Promise<Booking> {
@@ -49,32 +54,59 @@ export class BookingsService {
     // 生成预约号
     const bookingNumber = await this.generateBookingNumber();
 
-    // 验证逻辑调整
-    if (createBookingDto.bookingType === 'standard') {
-      if (!createBookingDto.productId) {
-        throw new BadRequestException('标准预约需要选择产品');
-      }
-      // 检查产品存在性和库存
-      const product = await this.productsRepository.findOne({
-        where: { id: createBookingDto.productId },
-      });
-      if (!product) {
-        throw new NotFoundException('产品不存在');
-      }
-    } else if (createBookingDto.bookingType === 'time_slot_only') {
-      // 时段预留的特定验证
-      if (!createBookingDto.participants) {
-        throw new BadRequestException('时段预留需要提供预估人数');
-      }
+    // 验证逻辑
+    if (createBookingDto.bookingType === 'standard' && !createBookingDto.productId) {
+      throw new BadRequestException('标准预约需要选择产品');
     }
 
-    const booking = this.bookingsRepository.create({
-      bookingNumber,
-      ...createBookingDto,
-      bookingType: createBookingDto.bookingType as 'standard' | 'time_slot_only',
+    if (createBookingDto.bookingType === 'time_slot_only') {
+      // 时段预留时清空productId
+      createBookingDto.productId = undefined;
+    }
 
-      status: 'pending',
+    const bookingData = {
+      ...createBookingDto,
+      bookingNumber,
+
+      bookingType: createBookingDto.bookingType as Booking['bookingType'],
+    };
+
+    const booking = this.bookingsRepository.create(bookingData);
+    return await this.bookingsRepository.save(booking);
+  }
+
+  async remove(bookingNumber: string): Promise<Booking> {
+    const booking = await this.bookingsRepository.findOne({
+      where: { bookingNumber },
     });
+
+    if (!booking) {
+      throw new NotFoundException(`预约号 ${bookingNumber} 未找到`);
+    }
+
+    // 软删除：更新状态而不是物理删除
+    booking.status = 'cancelled';
+    booking.deletedAt = new Date();
+
+    return await this.bookingsRepository.save(booking);
+  }
+  async cancel(bookingNumber: string): Promise<Booking> {
+    const booking = await this.bookingsRepository.findOne({
+      where: { bookingNumber },
+      // 移除 relations: ['product']，因为 Booking 实体中没有 product 关系
+    });
+
+    if (!booking) {
+      throw new NotFoundException(`预约号 ${bookingNumber} 未找到`);
+    }
+
+    // 业务规则：只有特定状态可以取消
+    if (!['pending', 'confirmed'].includes(booking.status)) {
+      throw new BadRequestException('当前状态无法取消预约');
+    }
+
+    booking.status = 'cancelled';
+    booking.cancelledAt = new Date();
 
     return await this.bookingsRepository.save(booking);
   }
@@ -139,73 +171,62 @@ export class BookingsService {
     return booking;
   }
 
-  async update(id: string, updateBookingDto: UpdateBookingDto): Promise<Booking> {
+  // ... existing imports ...
+
+  async update(bookingNumber: string, updateBookingDto: UpdateBookingDto): Promise<Booking> {
     const booking = await this.bookingsRepository.findOne({
-      where: { id },
-      relations: ['product'],
+      where: { bookingNumber },
     });
 
     if (!booking) {
-      throw new NotFoundException(`预约 #${id} 未找到`);
+      throw new NotFoundException(`预约号 ${bookingNumber} 未找到`);
     }
 
-    try {
-      // 处理状态变更逻辑
-      if (updateBookingDto.status === 'cancelled' && booking.status !== 'cancelled') {
-        // 取消预约时恢复库存
-        await this.productsRepository
-          .createQueryBuilder()
-          .update(Product)
-          .set({
-            stockQuantity: () => 'stock_quantity + 1',
-            updatedAt: new Date(),
-          })
-          .where('id = :id', { id: booking.productId })
-          .execute();
-      }
-
-      // 在 update 方法中替换以下代码段：
-
-      const updatedBooking = this.bookingsRepository.merge(booking, {
-        ...updateBookingDto,
-        bookingDate: updateBookingDto.bookingDate ? new Date(updateBookingDto.bookingDate) : booking.bookingDate,
-        status: updateBookingDto.status ? (updateBookingDto.status as BookingStatus) : booking.status,
-      });
-
-      return await this.bookingsRepository.save(updatedBooking);
-    } catch (error) {
-      throw new BadRequestException('更新预约失败: ' + error.message);
-    }
-  }
-
-  async remove(id: string): Promise<void> {
-    const booking = await this.bookingsRepository.findOne({
-      where: { id },
-      relations: ['product'],
-    });
-
-    if (!booking) {
-      throw new NotFoundException(`预约 #${id} 未找到`);
+    // 业务规则：已取消或完成的预约不能修改
+    if (['cancelled', 'completed', 'no_show'].includes(booking.status)) {
+      throw new BadRequestException('当前状态的预约无法修改');
     }
 
-    // 删除预约前恢复库存
-    if (booking.status !== 'cancelled') {
-      await this.productsRepository
-        .createQueryBuilder()
-        .update(Product)
-        .set({
-          stockQuantity: () => 'stock_quantity + 1',
-          updatedAt: new Date(),
-        })
-        .where('id = :id', { id: booking.productId })
-        .execute();
+    // 更新允许修改的字段
+    if (updateBookingDto.customerFullname !== undefined) {
+      booking.customerFullname = updateBookingDto.customerFullname;
+    }
+    if (updateBookingDto.customerEmail !== undefined) {
+      booking.customerEmail = updateBookingDto.customerEmail;
+    }
+    if (updateBookingDto.customerPhone !== undefined) {
+      booking.customerPhone = updateBookingDto.customerPhone;
+    }
+    if (updateBookingDto.bookingDate !== undefined) {
+      booking.bookingDate = new Date(updateBookingDto.bookingDate);
+    }
+    if (updateBookingDto.bookingTime !== undefined) {
+      booking.bookingTime = updateBookingDto.bookingTime;
+    }
+    if (updateBookingDto.timeSlot !== undefined) {
+      booking.timeSlot = updateBookingDto.timeSlot;
+    }
+    if (updateBookingDto.participants !== undefined) {
+      booking.participants = updateBookingDto.participants;
+    }
+    if (updateBookingDto.totalAmount !== undefined) {
+      booking.totalAmount = updateBookingDto.totalAmount;
+    }
+    if (updateBookingDto.notes !== undefined) {
+      booking.notes = updateBookingDto.notes;
+    }
+    if (updateBookingDto.emergencyContact !== undefined) {
+      booking.emergencyContact = updateBookingDto.emergencyContact;
+    }
+    if (updateBookingDto.status !== undefined) {
+      // 状态变更需要特殊处理
+      booking.status = updateBookingDto.status;
     }
 
-    const result = await this.bookingsRepository.delete(id);
+    // 自动更新更新时间
+    booking.updateAt = new Date();
 
-    if (result.affected === 0) {
-      throw new NotFoundException(`预约 #${id} 未找到`);
-    }
+    return await this.bookingsRepository.save(booking);
   }
 
   async getAvailableTimeSlots(productId: number, date: string): Promise<string[]> {

@@ -9,7 +9,12 @@ import { Booking } from '../../core/entities/booking.entity';
 export class BookingsController {
   constructor(private readonly bookingsService: BookingsService) {}
 
-  @Post()
+  @Get('test')
+  test() {
+    return { message: 'Booking controller is working' };
+  }
+
+  @Post('create')
   @ApiOperation({ summary: '创建新预约' })
   @ApiResponse({
     status: 201,
@@ -32,12 +37,18 @@ export class BookingsController {
     return this.bookingsService.create(createBookingDto);
   }
 
+  // ✅ 取消预约（软删除/状态变更）
+  @Patch('cancel/:id')
+  async cancel(@Param('id') id: string) {
+    return this.bookingsService.cancel(id);
+  }
+
   @Get('number/:bookingNumber')
   async findByBookingNumber(@Param('bookingNumber') bookingNumber: string) {
     return this.bookingsService.findByBookingNumber(bookingNumber);
   }
 
-  @Get()
+  @Get('list')
   @ApiOperation({ summary: '获取预约列表' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
@@ -110,7 +121,7 @@ export class BookingsController {
     return this.bookingsService.getBookingStats();
   }
 
-  @Get(':id')
+  @Get('detail/:id')
   @ApiOperation({ summary: '根据ID获取预约详情' })
   @ApiParam({ name: 'id', description: '预约ID' })
   @ApiResponse({
@@ -126,7 +137,7 @@ export class BookingsController {
     return this.bookingsService.findOne(id);
   }
 
-  @Patch(':id')
+  @Patch('update/:id')
   @ApiOperation({ summary: '更新预约信息' })
   @ApiParam({ name: 'id', description: '预约ID' })
   @ApiResponse({
@@ -142,11 +153,11 @@ export class BookingsController {
     status: 400,
     description: '请求参数错误',
   })
-  update(@Param('id', ParseIntPipe) id: string, @Body() updateBookingDto: UpdateBookingDto) {
-    return this.bookingsService.update(id, updateBookingDto);
+  update(@Param('bookingNumber') bookingNumber: string, @Body() updateBookingDto: UpdateBookingDto) {
+    return this.bookingsService.update(bookingNumber, updateBookingDto);
   }
 
-  @Delete(':id')
+  @Delete('delete/:bookingNumber')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: '删除预约' })
   @ApiParam({ name: 'id', description: '预约ID' })
@@ -158,7 +169,7 @@ export class BookingsController {
     status: 404,
     description: '预约未找到',
   })
-  remove(@Param('id', ParseIntPipe) id: string) {
-    return this.bookingsService.remove(id);
+  remove(@Param('bookingNumber') bookingNumber: string) {
+    return this.bookingsService.remove(bookingNumber);
   }
 }

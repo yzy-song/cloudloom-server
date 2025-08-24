@@ -93,7 +93,7 @@ async function bootstrap() {
         bookingDate: '2024-03-15',
         timeSlot: '10:00 - 11:30',
         notes: '需要儿童尺寸',
-        totalPrice: 89.99,
+        totalAmount: 89.99,
         status: 'confirmed',
       },
       {
@@ -103,7 +103,7 @@ async function bootstrap() {
         selectedSize: 'L',
         bookingDate: '2024-03-16',
         timeSlot: '14:30 - 16:00',
-        totalPrice: 79.99,
+        totalAmount: 79.99,
         status: 'pending',
       },
     ];

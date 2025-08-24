@@ -1,23 +1,23 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsNumber, IsOptional, IsDateString, IsIn, IsEnum, IsNotEmpty, Min, Max } from 'class-validator';
-
+import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger';
+import { IsString, IsNumber, IsOptional, IsDateString, IsIn, Matches, IsNotEmpty, Min, Max } from 'class-validator';
+import { type BookingStatus } from 'src/core/entities/booking.entity';
 export class CreateBookingDto {
   @ApiProperty({ description: '客户姓名', example: '张三' })
   @IsString()
   @IsNotEmpty()
-  fullName: string;
+  customerFullname: string; // 改为 customerFullname
 
   @ApiProperty({ description: '联系方式', example: 'zhangsan@email.com' })
   @IsString()
   @IsNotEmpty()
-  contactInfo: string;
+  customerEmail: string; // 改为 customerEmail
 
   @ApiPropertyOptional({ description: '电话号码', example: '+353 123456789' })
   @IsOptional()
   @IsString()
-  phone?: string;
+  customerPhone?: string; // 改为 customerPhone
 
-  @ApiPropertyOptional({ description: '产品ID（标准预约时需要）', example: 1 })
+  @ApiPropertyOptional({ description: '产品ID', example: 1 })
   @IsOptional()
   @IsNumber()
   productId?: number;
@@ -25,6 +25,11 @@ export class CreateBookingDto {
   @ApiProperty({ description: '预约日期 (YYYY-MM-DD)', example: '2024-03-15' })
   @IsDateString()
   bookingDate: string;
+
+  @ApiProperty({ description: '开始时间 (HH:MM)', example: '10:00' })
+  @IsString()
+  @Matches(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/)
+  bookingTime: string;
 
   @ApiProperty({ description: '时间段', example: '10:00 - 11:30' })
   @IsString()
@@ -37,7 +42,7 @@ export class CreateBookingDto {
 
   @ApiProperty({ description: '总价格', example: 89.99 })
   @IsNumber()
-  totalAmount: number;
+  totalAmount: number; // 改为 totalAmount
 
   @ApiPropertyOptional({ description: '备注', example: '需要儿童尺寸' })
   @IsOptional()
@@ -45,7 +50,7 @@ export class CreateBookingDto {
   notes?: string;
 
   @ApiPropertyOptional({
-    description: '预约类型 (standard-标准预约, time_slot_only-时段预留)',
+    description: '预约类型',
     example: 'standard',
     default: 'standard',
   })
@@ -59,7 +64,7 @@ export class CreateBookingDto {
   emergencyContact?: string;
 }
 
-export class UpdateBookingDto {
+export class UpdateBookingDto extends PartialType(CreateBookingDto) {
   @ApiPropertyOptional({ description: '客户姓名', example: '张三' })
   @IsString()
   @IsOptional()
@@ -98,16 +103,15 @@ export class UpdateBookingDto {
   @ApiPropertyOptional({ description: '总价格', example: 89.99 })
   @IsNumber()
   @IsOptional()
-  totalPrice?: number;
+  totalAmount?: number;
 
   @ApiPropertyOptional({
     description: '状态',
     example: 'confirmed',
-    enum: ['pending', 'confirmed', 'completed', 'cancelled'],
+    enum: ['pending', 'confirmed', 'completed', 'cancelled', 'no_show'],
   })
-  @IsString()
   @IsOptional()
-  status?: string;
+  status?: BookingStatus;
 }
 
 export class BookingQueryDto {
