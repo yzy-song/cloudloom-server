@@ -75,7 +75,7 @@ export class BookingsService {
     return await this.bookingsRepository.save(booking);
   }
 
-  async remove(bookingNumber: string): Promise<Booking> {
+  async remove(bookingNumber: string): Promise<{ message: string; bookingNumber: string }> {
     const booking = await this.bookingsRepository.findOne({
       where: { bookingNumber },
     });
@@ -88,7 +88,14 @@ export class BookingsService {
     booking.status = 'cancelled';
     booking.deletedAt = new Date();
 
-    return await this.bookingsRepository.save(booking);
+    await this.bookingsRepository.save(booking);
+
+    this.logger.log(`预约 ${bookingNumber} 已软删除`);
+
+    return {
+      message: '预约已成功删除',
+      bookingNumber: bookingNumber,
+    };
   }
   async cancel(bookingNumber: string): Promise<Booking> {
     const booking = await this.bookingsRepository.findOne({

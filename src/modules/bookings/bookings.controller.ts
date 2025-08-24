@@ -157,19 +157,22 @@ export class BookingsController {
     return this.bookingsService.update(bookingNumber, updateBookingDto);
   }
 
-  @Delete('delete/:bookingNumber')
-  @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOperation({ summary: '删除预约' })
-  @ApiParam({ name: 'id', description: '预约ID' })
+  @Patch('delete/:bookingNumber')
+  @HttpCode(HttpStatus.OK) // 改为 200 以便返回数据
+  @ApiOperation({ summary: '软删除预约' })
+  @ApiParam({ name: 'bookingNumber', description: '预约号' })
   @ApiResponse({
-    status: 204,
+    status: 200,
     description: '预约删除成功',
+    schema: {
+      type: 'object',
+      properties: {
+        message: { type: 'string', example: '预约已成功删除' },
+        bookingNumber: { type: 'string', example: 'IR-20240315-001' },
+      },
+    },
   })
-  @ApiResponse({
-    status: 404,
-    description: '预约未找到',
-  })
-  remove(@Param('bookingNumber') bookingNumber: string) {
+  async remove(@Param('bookingNumber') bookingNumber: string) {
     return this.bookingsService.remove(bookingNumber);
   }
 }
