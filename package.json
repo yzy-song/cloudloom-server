@@ -61,6 +61,7 @@
     "@types/jest": "^30.0.0",
     "@types/node": "^22.17.2",
     "@types/nodemailer": "^7.0.0",
+    "@types/stripe": "^8.0.416",
     "@types/supertest": "^6.0.2",
     "eslint": "^9.18.0",
     "eslint-config-prettier": "^10.0.1",

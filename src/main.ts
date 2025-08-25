@@ -1,6 +1,13 @@
+/*
+ * @Author: yzy
+ * @Date: 2025-08-19 21:45:37
+ * @LastEditors: yzy
+ * @LastEditTime: 2025-08-25 02:11:58
+ */
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ConfigService } from '@nestjs/config';
+import * as bodyParser from 'body-parser';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -15,6 +22,9 @@ async function bootstrap() {
 
   // 设置全局前缀
   app.setGlobalPrefix('api');
+
+  // 只对 webhook 路由使用 raw body
+  app.use('/payments/webhook', bodyParser.raw({ type: 'application/json' }));
 
   const port = configService.get('PORT') || 3000;
   await app.listen(port);
