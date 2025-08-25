@@ -1,8 +1,5 @@
 /*
- * @Author: yzy
- * @Date: 2025-08-23 03:56:51
- * @LastEditors: yzy
- * @LastEditTime: 2025-08-23 06:16:44
+ * 用户登录请求体
  */
 import { ApiProperty } from '@nestjs/swagger';
 import { IsString, IsNotEmpty, MaxLength } from 'class-validator';
@@ -15,7 +12,7 @@ export class LoginUserDto {
   @IsString()
   @IsNotEmpty()
   @MaxLength(255)
-  identifier: string; // Changed from email to identifier
+  identifier: string; // 支持邮箱或用户名登录
 
   @ApiProperty({ description: '密码', example: 'password123' })
   @IsString()

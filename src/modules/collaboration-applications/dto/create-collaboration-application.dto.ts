@@ -5,7 +5,7 @@
  * @LastEditTime: 2025-08-23 08:24:36
  */
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsNumber, IsOptional, IsNotEmpty } from 'class-validator';
+import { IsString, IsOptional, IsNotEmpty } from 'class-validator';
 
 export class CreateCollaborationApplicationDto {
   @ApiProperty({ description: '姓名', example: '李四' })
@@ -23,8 +23,9 @@ export class CreateCollaborationApplicationDto {
   @IsOptional()
   company?: string;
 
-  @ApiProperty({ description: '合作类型', example: 1 })
+  @ApiProperty({ description: '合作类型', example: '渠道合作' })
   @IsString()
+  @IsNotEmpty()
   collaborationType: string;
 
   @ApiProperty({ description: '咨询消息', example: '我们想与贵馆建立长期合作关系...' })

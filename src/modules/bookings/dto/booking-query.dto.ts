@@ -1,12 +1,10 @@
 /*
- * @Author: yzy
- * @Date: 2025-08-24 14:14:38
- * @LastEditors: yzy
- * @LastEditTime: 2025-08-24 14:14:47
+ * 预约查询参数DTO
  */
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { IsString, IsNumber, IsOptional, IsDateString, IsIn, Matches, IsNotEmpty, Min, Max } from 'class-validator';
 import { type BookingStatus } from 'src/core/entities/booking.entity';
+
 export class BookingQueryDto {
   @ApiPropertyOptional({ description: '页码', example: 1, default: 1 })
   @IsNumber()

@@ -1,8 +1,5 @@
 /*
- * @Author: yzy
- * @Date: 2025-08-23 03:56:41
- * @LastEditors: yzy
- * @LastEditTime: 2025-08-23 17:52:51
+ * 用户注册请求体
  */
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsString, IsNotEmpty, IsEmail, MinLength, MaxLength } from 'class-validator';
@@ -14,7 +11,7 @@ export class RegisterUserDto {
   @MaxLength(50, { message: '用户名不能超过50个字符' })
   username: string;
 
-  @ApiProperty({ description: '头像' })
+  @ApiProperty({ description: '头像URL', example: 'https://example.com/avatar.png' })
   @IsString()
   avatarUrl: string;
 
@@ -32,7 +29,7 @@ export class RegisterUserDto {
   @MaxLength(50, { message: '密码不能超过50个字符' })
   password: string;
 
-  @ApiPropertyOptional({ description: '电话', required: false })
+  @ApiPropertyOptional({ description: '电话', required: false, example: '13800000000' })
   @IsString()
   @MaxLength(50)
   phone?: string;

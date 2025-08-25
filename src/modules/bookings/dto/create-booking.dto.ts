@@ -1,21 +1,25 @@
 import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger';
 import { IsString, IsNumber, IsOptional, IsDateString, IsIn, Matches, IsNotEmpty, Min, Max } from 'class-validator';
 import { type BookingStatus } from 'src/core/entities/booking.entity';
+
+/**
+ * 创建预约请求体
+ */
 export class CreateBookingDto {
   @ApiProperty({ description: '客户姓名', example: '张三' })
   @IsString()
   @IsNotEmpty()
-  customerFullname: string; // 改为 customerFullname
+  customerFullname: string;
 
-  @ApiProperty({ description: '联系方式', example: 'zhangsan@email.com' })
+  @ApiProperty({ description: '联系方式（邮箱）', example: 'zhangsan@email.com' })
   @IsString()
   @IsNotEmpty()
-  customerEmail: string; // 改为 customerEmail
+  customerEmail: string;
 
   @ApiPropertyOptional({ description: '电话号码', example: '+353 123456789' })
   @IsOptional()
   @IsString()
-  customerPhone?: string; // 改为 customerPhone
+  customerPhone?: string;
 
   @ApiPropertyOptional({ description: '产品ID', example: 1 })
   @IsOptional()
@@ -42,7 +46,7 @@ export class CreateBookingDto {
 
   @ApiProperty({ description: '总价格', example: 89.99 })
   @IsNumber()
-  totalAmount: number; // 改为 totalAmount
+  totalAmount: number;
 
   @ApiPropertyOptional({ description: '备注', example: '需要儿童尺寸' })
   @IsOptional()
@@ -64,6 +68,9 @@ export class CreateBookingDto {
   emergencyContact?: string;
 }
 
+/**
+ * 更新预约请求体（所有字段可选）
+ */
 export class UpdateBookingDto extends PartialType(CreateBookingDto) {
   @ApiPropertyOptional({ description: '客户姓名', example: '张三' })
   @IsString()

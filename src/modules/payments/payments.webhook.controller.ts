@@ -5,11 +5,13 @@
  * @LastEditTime: 2025-08-25 02:03:26
  */
 import { Controller, Post, Req, Res, Headers } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiHeader } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
 import Stripe from 'stripe';
 import type { Request, Response } from 'express';
 import { PaymentsWebhookService } from './payments.webhook.service';
 
+@ApiTags('支付')
 @Controller('payments/webhook')
 export class PaymentsWebhookController {
   constructor(
@@ -18,6 +20,10 @@ export class PaymentsWebhookController {
   ) {}
 
   @Post()
+  @ApiOperation({ summary: '处理Stripe支付Webhook回调' })
+  @ApiHeader({ name: 'stripe-signature', description: 'Stripe Webhook 签名', required: true })
+  @ApiResponse({ status: 200, description: 'Webhook处理成功' })
+  @ApiResponse({ status: 400, description: 'Webhook请求错误' })
   async handleWebhook(@Req() req: Request, @Res() res: Response, @Headers('stripe-signature') signature: string) {
     const stripeSecretKey = this.configService.get<string>('STRIPE_SECRET_KEY');
     if (!stripeSecretKey) {
