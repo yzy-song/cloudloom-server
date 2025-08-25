@@ -10,11 +10,6 @@ import { Booking } from '../../core/entities/booking.entity';
 export class BookingsController {
   constructor(private readonly bookingsService: BookingsService) {}
 
-  @Get('test')
-  test() {
-    return { message: 'Booking controller is working' };
-  }
-
   // 创建预约
   @Post()
   @ApiOperation({ summary: '创建新预约' })
@@ -35,8 +30,8 @@ export class BookingsController {
     status: 409,
     description: '库存不足或时间段冲突',
   })
-  create(@Body() createBookingDto: CreateBookingDto) {
-    return this.bookingsService.create(createBookingDto);
+  async create(@Body() createBookingDto: CreateBookingDto) {
+    return await this.bookingsService.create(createBookingDto);
   }
 
   // 取消预约（软删除/状态变更）
@@ -119,10 +114,7 @@ export class BookingsController {
     description: '返回该产品当天的预约列表',
     type: [Booking],
   })
-  getProductDailyBookings(
-    @Param('productId', ParseIntPipe) productId: number,
-    @Param('date') date: string,
-  ) {
+  getProductDailyBookings(@Param('productId', ParseIntPipe) productId: number, @Param('date') date: string) {
     return this.bookingsService.getProductDailyBookings(productId, date);
   }
 

@@ -28,7 +28,15 @@ export class Product {
   dynastyLabel: string;
 
   @ApiProperty({ description: '价格', example: 299.99 })
-  @Column({ type: 'decimal', precision: 10, scale: 2 })
+  @Column({
+    type: 'decimal',
+    precision: 10,
+    scale: 2,
+    transformer: {
+      to: (value: number) => value,
+      from: (value: string) => parseFloat(value),
+    },
+  })
   price: number;
 
   @ApiProperty({ description: '库存数量', example: 100 })

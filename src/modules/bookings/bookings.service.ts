@@ -49,7 +49,7 @@ export class BookingsService {
     return booking;
   }
 
-  async create(createBookingDto: CreateBookingDto): Promise<Booking> {
+  async create(createBookingDto: CreateBookingDto): Promise<{ code: number; message: string; data: Booking }> {
     // 生成预约号
     const bookingNumber = await this.generateBookingNumber();
 
@@ -71,7 +71,12 @@ export class BookingsService {
     };
 
     const booking = this.bookingsRepository.create(bookingData);
-    return await this.bookingsRepository.save(booking);
+    const saved = await this.bookingsRepository.save(booking);
+    return {
+      code: 0,
+      message: '预约成功',
+      data: saved,
+    };
   }
 
   async remove(bookingNumber: string): Promise<{ message: string; bookingNumber: string }> {
@@ -297,13 +302,13 @@ export class BookingsService {
       .createQueryBuilder('booking')
       .select('booking.timeSlot')
       .where('booking.productId = :productId', { productId })
-      .andWhere('booking.bookingDate = :date', { date: new Date(date) })
+      .andWhere('booking.bookingDate = :date', { date }) // 这里直接用字符串
       .andWhere('booking.status IN (:...statuses)', {
         statuses: ['pending', 'confirmed'],
       })
       .getMany();
 
-    const bookedSlotValues = bookedSlots.map(slot => slot.bookingTime);
+    const bookedSlotValues = bookedSlots.map(slot => slot.timeSlot); // 注意这里是 timeSlot
 
     // 返回可用的时间段
     return allTimeSlots.filter(slot => !bookedSlotValues.includes(slot));
