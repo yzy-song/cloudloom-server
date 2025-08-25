@@ -320,6 +320,18 @@ export class BookingsService {
       .getMany();
   }
 
+  async getProductDailyBookings(productId: number, date: string): Promise<Booking[]> {
+    return this.bookingsRepository
+      .createQueryBuilder('booking')
+      .where('booking.productId = :productId', { productId })
+      .andWhere('booking.bookingDate = :date', { date })
+      .andWhere('booking.status NOT IN (:...excludedStatuses)', {
+        excludedStatuses: ['cancelled', 'no_show', 'deleted'],
+      })
+      .orderBy('booking.bookingTime', 'ASC')
+      .getMany();
+  }
+
   // 统计方法
   async getBookingStats(): Promise<{
     total: number;

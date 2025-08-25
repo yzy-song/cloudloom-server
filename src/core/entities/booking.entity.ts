@@ -2,12 +2,12 @@
  * @Author: yzy
  * @Date: 2025-08-19 22:52:47
  * @LastEditors: yzy
- * @LastEditTime: 2025-08-24 14:29:04
+ * @LastEditTime: 2025-08-25 00:59:30
  */
 
 import { Entity, PrimaryGeneratedColumn, Column, Index } from 'typeorm';
 
-export type BookingStatus = 'pending' | 'confirmed' | 'completed' | 'cancelled' | 'no_show';
+export type BookingStatus = 'pending' | 'confirmed' | 'completed' | 'cancelled' | 'deleted' | 'no_show';
 
 @Entity('bookings')
 @Index(['bookingDate', 'timeSlot']) // 复合索引用于查询可用时间段

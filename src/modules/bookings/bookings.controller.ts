@@ -15,7 +15,8 @@ export class BookingsController {
     return { message: 'Booking controller is working' };
   }
 
-  @Post('create')
+  // 创建预约
+  @Post()
   @ApiOperation({ summary: '创建新预约' })
   @ApiResponse({
     status: 201,
@@ -38,13 +39,14 @@ export class BookingsController {
     return this.bookingsService.create(createBookingDto);
   }
 
-  // ✅ 取消预约（软删除/状态变更）
-  @Patch('cancel/:id')
+  // 取消预约（软删除/状态变更）
+  @Patch(':id/cancel')
   async cancel(@Param('id') id: string) {
     return this.bookingsService.cancel(id);
   }
 
-  @Get('list')
+  // 获取预约列表（支持高级筛选）
+  @Get()
   @ApiOperation({ summary: '获取预约列表（支持高级筛选）' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
@@ -64,6 +66,7 @@ export class BookingsController {
     return this.bookingsService.findAll(query);
   }
 
+  // 高级搜索预约（可合并到findAll，也可保留）
   @Get('search')
   @ApiOperation({ summary: '高级搜索预约' })
   @ApiResponse({
@@ -75,7 +78,8 @@ export class BookingsController {
     return this.bookingsService.searchBookings(query);
   }
 
-  @Get('available-slots/:productId/:date')
+  // 获取可用时间段
+  @Get(':productId/available-slots/:date')
   @ApiOperation({ summary: '获取可用时间段' })
   @ApiParam({ name: 'productId', description: '产品ID' })
   @ApiParam({ name: 'date', description: '日期 (YYYY-MM-DD)' })
@@ -92,7 +96,8 @@ export class BookingsController {
     return this.bookingsService.getAvailableTimeSlots(productId, date);
   }
 
-  @Get('daily/:date')
+  // 获取某天的所有预约
+  @Get('date/:date')
   @ApiOperation({ summary: '获取某天的所有预约' })
   @ApiParam({ name: 'date', description: '日期 (YYYY-MM-DD)' })
   @ApiResponse({
@@ -104,6 +109,24 @@ export class BookingsController {
     return this.bookingsService.getDailyBookings(date);
   }
 
+  // 获取某产品某天的所有预约
+  @Get('product/:productId/date/:date')
+  @ApiOperation({ summary: '获取某产品某天的所有预约' })
+  @ApiParam({ name: 'productId', description: '产品ID' })
+  @ApiParam({ name: 'date', description: '日期 (YYYY-MM-DD)' })
+  @ApiResponse({
+    status: 200,
+    description: '返回该产品当天的预约列表',
+    type: [Booking],
+  })
+  getProductDailyBookings(
+    @Param('productId', ParseIntPipe) productId: number,
+    @Param('date') date: string,
+  ) {
+    return this.bookingsService.getProductDailyBookings(productId, date);
+  }
+
+  // 获取预约统计
   @Get('stats')
   @ApiOperation({ summary: '获取预约统计' })
   @ApiResponse({
@@ -124,7 +147,8 @@ export class BookingsController {
     return this.bookingsService.getBookingStats();
   }
 
-  @Get('detail/:bookingNumber')
+  // 获取预约详情
+  @Get(':bookingNumber')
   @ApiOperation({ summary: '根据ID获取预约详情' })
   @ApiParam({ name: 'bookingNumber', description: '预约ID' })
   @ApiResponse({
@@ -140,9 +164,10 @@ export class BookingsController {
     return this.bookingsService.findByBookingNumber(bookingNumber);
   }
 
-  @Patch('update/:id')
+  // 更新预约信息
+  @Patch(':bookingNumber')
   @ApiOperation({ summary: '更新预约信息' })
-  @ApiParam({ name: 'id', description: '预约ID' })
+  @ApiParam({ name: 'bookingNumber', description: '预约ID' })
   @ApiResponse({
     status: 200,
     description: '预约更新成功',
@@ -160,8 +185,9 @@ export class BookingsController {
     return this.bookingsService.update(bookingNumber, updateBookingDto);
   }
 
-  @Patch('delete/:bookingNumber')
-  @HttpCode(HttpStatus.OK) // 改为 200 以便返回数据
+  // 软删除预约
+  @Delete(':bookingNumber')
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: '软删除预约' })
   @ApiParam({ name: 'bookingNumber', description: '预约号' })
   @ApiResponse({
