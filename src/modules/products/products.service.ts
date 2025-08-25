@@ -2,7 +2,7 @@
  * @Author: yzy
  * @Date: 2025-08-19 23:12:29
  * @LastEditors: yzy
- * @LastEditTime: 2025-08-25 00:28:45
+ * @LastEditTime: 2025-08-25 12:02:27
  */
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -10,6 +10,14 @@ import { Repository, In } from 'typeorm';
 import { Product } from '../../core/entities/product.entity';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
+
+export interface FindAllProductsParams {
+  page?: number;
+  limit?: number;
+  categoryId?: number;
+  isActive?: boolean;
+  tags?: string;
+}
 
 @Injectable()
 export class ProductsService {
@@ -23,7 +31,8 @@ export class ProductsService {
     return await this.productRepository.save(product);
   }
 
-  async findAll(page: number = 1, limit: number = 10, categoryId?: number, isActive?: boolean, tagArray?: string[]): Promise<{ data: Product[]; total: number }> {
+  async findAll(params: FindAllProductsParams) {
+    const { page = 1, limit = 10, categoryId, isActive, tags } = params;
     const skip = (page - 1) * limit;
     const where: any = {};
 
@@ -35,8 +44,8 @@ export class ProductsService {
       where.isActive = isActive;
     }
 
-    if (tagArray && tagArray.length > 0) {
-      where.tags = In(tagArray);
+    if (tags) {
+      where.tags = In(tags.split(','));
     }
 
     const [data, total] = await this.productRepository.findAndCount({
