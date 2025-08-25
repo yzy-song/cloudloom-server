@@ -31,9 +31,20 @@ export class PaymentsService {
       currency,
       payment_method: paymentMethodId,
       confirm: true,
+      automatic_payment_methods: {
+        enabled: true,
+        allow_redirects: 'never',
+      },
     });
 
-    return paymentIntent;
+    // 推荐只返回关键字段
+    return {
+      id: paymentIntent.id,
+      client_secret: paymentIntent.client_secret,
+      status: paymentIntent.status,
+      amount: paymentIntent.amount,
+      currency: paymentIntent.currency,
+    };
   }
 
   async handleWebhook(event: Stripe.Event) {
