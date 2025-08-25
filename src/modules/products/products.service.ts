@@ -2,7 +2,7 @@
  * @Author: yzy
  * @Date: 2025-08-19 23:12:29
  * @LastEditors: yzy
- * @LastEditTime: 2025-08-25 12:10:10
+ * @LastEditTime: 2025-08-25 13:30:10
  */
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -59,7 +59,7 @@ export class ProductsService {
     return { data, total };
   }
 
-  async findOne(id: number): Promise<Product> {
+  async findOne(id: number): Promise<{ data: Product; message: string }> {
     const product = await this.productRepository.findOne({
       where: { id },
       relations: ['category'],
@@ -69,13 +69,13 @@ export class ProductsService {
       throw new NotFoundException(`Product with ID ${id} not found`);
     }
 
-    return product;
+    return { data: product, message: 'Product retrieved successfully' };
   }
 
-  async update(id: number, updateProductDto: UpdateProductDto): Promise<Product> {
+  async update(id: number, updateProductDto: UpdateProductDto): Promise<{ data: Product }> {
     const product = await this.findOne(id);
-    const updated = this.productRepository.merge(product, updateProductDto);
-    return await this.productRepository.save(updated);
+    const updated = this.productRepository.merge(product.data, updateProductDto);
+    return { data: await this.productRepository.save(updated) };
   }
 
   async remove(id: number): Promise<void> {
@@ -85,16 +85,16 @@ export class ProductsService {
     }
   }
 
-  async updateStock(id: number, quantity: number): Promise<Product> {
+  async updateStock(id: number, quantity: number): Promise<{ data: Product }> {
     const product = await this.findOne(id);
-    product.stockQuantity = quantity;
-    return await this.productRepository.save(product);
+    product.data.stockQuantity = quantity;
+    return { data: await this.productRepository.save(product.data) };
   }
 
   async updateActiveStatus(id: number, isActive: boolean): Promise<Product> {
     const product = await this.findOne(id);
-    product.isActive = isActive;
-    return await this.productRepository.save(product);
+    product.data.isActive = isActive;
+    return await this.productRepository.save(product.data);
   }
 
   async findByTags(tags: string[]): Promise<Product[]> {
@@ -107,16 +107,17 @@ export class ProductsService {
     });
   }
 
-  async findRelated(id: number, limit: number): Promise<Product[]> {
+  async findRelated(id: number, limit: number): Promise<{ data: Product[]; message?: string }> {
     // 这里可以根据实际业务，比如同分类、同标签等，返回相关产品
     const product = await this.productRepository.findOne({ where: { id } });
-    if (!product) return [];
-    return this.productRepository.find({
+    if (!product) return { data: [], message: 'Product not found' };
+    const relatedProducts = await this.productRepository.find({
       where: {
         categoryId: product.categoryId,
         id: Not(id), // 排除自身
       },
       take: limit, // 返回指定数量的相关产品
     });
+    return { data: relatedProducts };
   }
 }
