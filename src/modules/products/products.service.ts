@@ -2,7 +2,7 @@
  * @Author: yzy
  * @Date: 2025-08-19 23:12:29
  * @LastEditors: yzy
- * @LastEditTime: 2025-08-25 12:02:27
+ * @LastEditTime: 2025-08-25 12:10:10
  */
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -107,7 +107,7 @@ export class ProductsService {
     });
   }
 
-  async findRelated(id: number): Promise<Product[]> {
+  async findRelated(id: number, limit: number): Promise<Product[]> {
     // 这里可以根据实际业务，比如同分类、同标签等，返回相关产品
     const product = await this.productRepository.findOne({ where: { id } });
     if (!product) return [];
@@ -116,7 +116,7 @@ export class ProductsService {
         categoryId: product.categoryId,
         id: Not(id), // 排除自身
       },
-      take: 8, // 返回8个相关产品
+      take: limit, // 返回指定数量的相关产品
     });
   }
 }

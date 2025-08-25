@@ -2,7 +2,7 @@
  * @Author: yzy
  * @Date: 2025-08-19 23:12:58
  * @LastEditors: yzy
- * @LastEditTime: 2025-08-25 00:16:34
+ * @LastEditTime: 2025-08-25 12:10:46
  */
 import { Controller, Get, Post, Patch, Delete, Body, Param, Query, ParseIntPipe } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
@@ -72,8 +72,9 @@ export class ProductsController {
 
   @Get(':id/related')
   @ApiOperation({ summary: '获取相关产品' })
+  @ApiQuery({ name: 'limit', required: false, description: '返回相关产品数量', example: 5 })
   @ApiResponse({ status: 200, description: '相关产品列表', type: [Product] })
-  async findRelated(@Param('id', ParseIntPipe) id: number) {
-    return this.productsService.findRelated(id);
+  async findRelated(@Param('id', ParseIntPipe) id: number, @Query('limit', ParseIntPipe) limit: number = 8) {
+    return this.productsService.findRelated(id, limit);
   }
 }
