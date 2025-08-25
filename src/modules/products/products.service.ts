@@ -6,7 +6,7 @@
  */
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In } from 'typeorm';
+import { Repository, In, Not } from 'typeorm';
 import { Product } from '../../core/entities/product.entity';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
@@ -104,6 +104,19 @@ export class ProductsService {
         isActive: true,
       },
       take: 20,
+    });
+  }
+
+  async findRelated(id: number): Promise<Product[]> {
+    // 这里可以根据实际业务，比如同分类、同标签等，返回相关产品
+    const product = await this.productRepository.findOne({ where: { id } });
+    if (!product) return [];
+    return this.productRepository.find({
+      where: {
+        categoryId: product.categoryId,
+        id: Not(id), // 排除自身
+      },
+      take: 8, // 返回8个相关产品
     });
   }
 }

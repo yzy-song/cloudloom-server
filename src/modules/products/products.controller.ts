@@ -69,4 +69,11 @@ export class ProductsController {
   updateActive() {
     // ...实现...
   }
+
+  @Get(':id/related')
+  @ApiOperation({ summary: '获取相关产品' })
+  @ApiResponse({ status: 200, description: '相关产品列表', type: [Product] })
+  async findRelated(@Param('id', ParseIntPipe) id: number) {
+    return this.productsService.findRelated(id);
+  }
 }
