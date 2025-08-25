@@ -83,8 +83,8 @@ export class BookingsService {
       throw new NotFoundException(`预约号 ${bookingNumber} 未找到`);
     }
 
-    // 软删除：更新状态而不是物理删除
-    booking.status = 'cancelled';
+    // 软删除：更新状态为 deleted
+    booking.status = 'deleted';
     booking.deletedAt = new Date();
 
     await this.bookingsRepository.save(booking);

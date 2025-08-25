@@ -185,14 +185,14 @@ export class BookingsController {
     return this.bookingsService.update(bookingNumber, updateBookingDto);
   }
 
-  // 软删除预约
-  @Delete(':bookingNumber')
+  // 软删除预约（推荐用 PATCH，语义更清晰）
+  @Patch(':bookingNumber/delete')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: '软删除预约' })
+  @ApiOperation({ summary: '软删除预约（将状态设为deleted）' })
   @ApiParam({ name: 'bookingNumber', description: '预约号' })
   @ApiResponse({
     status: 200,
-    description: '预约删除成功',
+    description: '预约软删除成功',
     schema: {
       type: 'object',
       properties: {
@@ -201,7 +201,7 @@ export class BookingsController {
       },
     },
   })
-  async remove(@Param('bookingNumber') bookingNumber: string) {
+  async softDelete(@Param('bookingNumber') bookingNumber: string) {
     return this.bookingsService.remove(bookingNumber);
   }
 }
