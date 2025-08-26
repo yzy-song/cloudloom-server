@@ -2,7 +2,7 @@
  * @Author: yzy
  * @Date: 2025-08-25 01:28:02
  * @LastEditors: yzy
- * @LastEditTime: 2025-08-25 23:22:34
+ * @LastEditTime: 2025-08-26 02:09:02
  */
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
