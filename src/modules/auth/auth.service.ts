@@ -2,7 +2,7 @@
  * @Author: yzy
  * @Date: 2025-08-23 03:56:23
  * @LastEditors: yzy
- * @LastEditTime: 2025-08-23 23:29:56
+ * @LastEditTime: 2025-08-26 12:15:23
  */
 import { Injectable, UnauthorizedException, ConflictException, Inject } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
@@ -61,6 +61,7 @@ export class AuthService {
     try {
       const user = await this.validateUser(loginUserDto.identifier, loginUserDto.password);
       const payload = { username: user.username, sub: user.id };
+      this.logger.log(`用户登录: ${user.username} (ID: ${user.username})`);
       return {
         accessToken: this.jwtService.sign(payload),
         user: user, // 返回用户信息
