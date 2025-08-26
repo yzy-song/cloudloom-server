@@ -2,7 +2,7 @@
  * @Author: yzy
  * @Date: 2025-08-25 01:28:02
  * @LastEditors: yzy
- * @LastEditTime: 2025-08-25 02:06:52
+ * @LastEditTime: 2025-08-25 23:22:34
  */
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -24,27 +24,14 @@ export class PaymentsService {
   }
 
   async createPayment(createPaymentDto: CreatePaymentDto) {
-    const { amount, currency, paymentMethodId } = createPaymentDto;
-
+    const { amount, currency, description } = createPaymentDto;
     const paymentIntent = await this.stripe.paymentIntents.create({
-      amount: Number(amount),
+      amount,
       currency,
-      payment_method: paymentMethodId,
-      confirm: true,
-      automatic_payment_methods: {
-        enabled: true,
-        allow_redirects: 'never',
-      },
+      description,
+      // 不要加 payment_method，不要加 confirm
     });
-
-    // 推荐只返回关键字段
-    return {
-      id: paymentIntent.id,
-      client_secret: paymentIntent.client_secret,
-      status: paymentIntent.status,
-      amount: paymentIntent.amount,
-      currency: paymentIntent.currency,
-    };
+    return paymentIntent;
   }
 
   async handleWebhook(event: Stripe.Event) {

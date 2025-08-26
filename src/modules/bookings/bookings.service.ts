@@ -1,3 +1,9 @@
+/*
+ * @Author: yzy
+ * @Date: 2025-08-24 13:48:54
+ * @LastEditors: yzy
+ * @LastEditTime: 2025-08-25 23:23:40
+ */
 import { Injectable, NotFoundException, BadRequestException, ConflictException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In, Between, MoreThanOrEqual, LessThanOrEqual } from 'typeorm';
@@ -8,17 +14,31 @@ import { CreateBookingDto, UpdateBookingDto } from './dto/create-booking.dto';
 import { BookingQueryDto } from './dto/booking-query.dto';
 import { AppLogger } from '../../utils/logger';
 
+import { ConfigService } from '@nestjs/config';
+import { Stripe } from 'stripe';
+import { PaymentsService } from '../payments/payments.service';
+
 @Injectable()
 export class BookingsService {
+  private stripe: Stripe;
+
   constructor(
     @InjectRepository(Booking)
     private bookingsRepository: Repository<Booking>,
     @InjectRepository(Product)
-    private productsRepository: Repository<Product>,
     private notificationsService: NotificationsService,
-    private readonly logger: AppLogger // 依赖注入
+    private paymentsService: PaymentsService,
+    private readonly logger: AppLogger, // 依赖注入
+    private readonly configService: ConfigService
   ) {
     this.logger.setContext(BookingsService.name);
+    const stripeSecretKey = this.configService.get<string>('STRIPE_SECRET_KEY');
+    if (!stripeSecretKey) {
+      throw new Error('STRIPE_SECRET_KEY is not defined in environment variables');
+    }
+    this.stripe = new Stripe(stripeSecretKey, {
+      apiVersion: '2025-07-30.basil',
+    });
   }
 
   // 新增：预约号生成服务
@@ -49,7 +69,7 @@ export class BookingsService {
     return booking;
   }
 
-  async create(createBookingDto: CreateBookingDto): Promise<{ code: number; message: string; data: Booking }> {
+  async create(createBookingDto: CreateBookingDto): Promise<{ code: number; message: string; data: Booking & { client_secret: string } }> {
     // 生成预约号
     const bookingNumber = await this.generateBookingNumber();
 
@@ -72,10 +92,21 @@ export class BookingsService {
 
     const booking = this.bookingsRepository.create(bookingData);
     const saved = await this.bookingsRepository.save(booking);
+
+    const paymentResult = await this.paymentsService.createPayment({
+      amount: Math.round(saved.totalAmount * 100),
+      currency: 'usd',
+      description: `预约号：${saved.bookingNumber}`,
+      // 其它参数如 description 可选
+    });
+
     return {
       code: 0,
       message: '预约成功',
-      data: saved,
+      data: {
+        ...saved,
+        client_secret: paymentResult.client_secret ?? '',
+      },
     };
   }
 
