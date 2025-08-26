@@ -2,12 +2,10 @@
  * @Author: yzy
  * @Date: 2025-08-19 21:45:37
  * @LastEditors: yzy
- * @LastEditTime: 2025-08-25 02:27:10
+ * @LastEditTime: 2025-08-26 02:38:37
  */
 // src/app.module.ts
 import { Module } from '@nestjs/common';
-import { APP_FILTER } from '@nestjs/core';
-import { AllExceptionsFilter } from './filters/all-exceptions.filter';
 
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
