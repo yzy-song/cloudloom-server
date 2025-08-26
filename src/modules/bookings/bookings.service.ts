@@ -2,7 +2,7 @@
  * @Author: yzy
  * @Date: 2025-08-24 13:48:54
  * @LastEditors: yzy
- * @LastEditTime: 2025-08-25 23:23:40
+ * @LastEditTime: 2025-08-26 02:02:11
  */
 import { Injectable, NotFoundException, BadRequestException, ConflictException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -97,7 +97,6 @@ export class BookingsService {
       amount: Math.round(saved.totalAmount * 100),
       currency: 'usd',
       description: `预约号：${saved.bookingNumber}`,
-      // 其它参数如 description 可选
     });
 
     return {
