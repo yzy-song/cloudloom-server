@@ -2,7 +2,7 @@
  * @Author: yzy
  * @Date: 2025-08-24 13:48:54
  * @LastEditors: yzy
- * @LastEditTime: 2025-08-26 02:02:11
+ * @LastEditTime: 2025-08-26 02:16:18
  */
 import { Injectable, NotFoundException, BadRequestException, ConflictException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -119,6 +119,7 @@ export class BookingsService {
     }
 
     // 软删除：更新状态为 deleted
+
     booking.status = 'deleted';
     booking.deletedAt = new Date();
 
