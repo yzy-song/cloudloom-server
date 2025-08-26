@@ -2,7 +2,7 @@
  * @Author: yzy
  * @Date: 2025-08-19 23:12:29
  * @LastEditors: yzy
- * @LastEditTime: 2025-08-25 13:30:10
+ * @LastEditTime: 2025-08-26 13:37:06
  */
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -10,7 +10,7 @@ import { Repository, In, Not } from 'typeorm';
 import { Product } from '../../core/entities/product.entity';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
-
+import { AppLogger } from '../../utils/logger';
 export interface FindAllProductsParams {
   page?: number;
   limit?: number;
@@ -23,7 +23,8 @@ export interface FindAllProductsParams {
 export class ProductsService {
   constructor(
     @InjectRepository(Product)
-    private readonly productRepository: Repository<Product>
+    private readonly productRepository: Repository<Product>,
+    private readonly logger: AppLogger // 依赖注入
   ) {}
 
   async create(createProductDto: CreateProductDto): Promise<Product> {
@@ -56,6 +57,7 @@ export class ProductsService {
       order: { createdAt: 'DESC' },
     });
 
+    this.logger.log(`Fetched products - total: ${total}`);
     return { data, total };
   }
 
