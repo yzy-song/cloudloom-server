@@ -2,7 +2,7 @@
  * @Author: yzy
  * @Date: 2025-08-23 03:56:23
  * @LastEditors: yzy
- * @LastEditTime: 2025-08-26 12:15:23
+ * @LastEditTime: 2025-08-27 15:36:56
  */
 import { Injectable, UnauthorizedException, ConflictException, Inject } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
@@ -11,11 +11,14 @@ import { Repository } from 'typeorm';
 import { User } from '../../core/entities/user.entity';
 import { RegisterUserDto } from './dto/register-user.dto';
 import { LoginUserDto } from './dto/login-user.dto';
+import { OAuthLoginDto } from './dto/oauth-login.dto';
 import * as bcrypt from 'bcryptjs';
 import { type Cache } from 'cache-manager';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 
 import { AppLogger } from '../../utils/logger';
+import * as admin from 'firebase-admin';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class AuthService {
@@ -23,13 +26,25 @@ export class AuthService {
     @InjectRepository(User)
     private usersRepository: Repository<User>,
 
-    @Inject(CACHE_MANAGER) // ✅ 放在 cacheManager 前面
+    @Inject(CACHE_MANAGER)
     private cacheManager: Cache,
 
     private jwtService: JwtService,
-    private readonly logger: AppLogger // 依赖注入
+    private readonly configService: ConfigService,
+    private readonly logger: AppLogger
   ) {
     this.logger.setContext(AuthService.name);
+
+    // 用 ConfigService 初始化 firebase-admin
+    if (!admin.apps.length) {
+      admin.initializeApp({
+        credential: admin.credential.cert({
+          projectId: this.configService.get<string>('FIREBASE_PROJECT_ID'),
+          clientEmail: this.configService.get<string>('FIREBASE_CLIENT_EMAIL'),
+          privateKey: this.configService.get<string>('FIREBASE_PRIVATE_KEY')?.replace(/\\n/g, '\n'),
+        }),
+      });
+    }
   }
 
   async register(registerUserDto: RegisterUserDto): Promise<User> {
@@ -106,5 +121,42 @@ export class AuthService {
     } catch (error) {
       throw new Error('Token 解析失败');
     }
+  }
+
+  async oauthLogin(dto: OAuthLoginDto): Promise<{ accessToken: string; user: User }> {
+    this.logger.log(`开始 Firebase OAuth 登录: ${dto.idToken}`);
+    let decoded;
+    try {
+      decoded = await admin.auth().verifyIdToken(dto.idToken);
+    } catch (e) {
+      throw new UnauthorizedException('无效的 firebase token');
+    }
+
+    this.logger.log(`Firebase Token 验证成功: ${JSON.stringify(decoded)}`);
+
+    // decoded.uid, decoded.email, decoded.name, decoded.picture
+    let user = await this.usersRepository.findOne({
+      where: [{ email: decoded.email }, { username: decoded.uid }],
+    });
+
+    this.logger.log(`Firebase OAuth 登录: ${decoded.uid} (${decoded.email})`);
+    if (!user) {
+      // 自动注册
+      user = this.usersRepository.create({
+        username: decoded.uid,
+        email: decoded.email,
+        nickName: decoded.name,
+        avatarUrl: decoded.picture,
+        passwordHash: '', // 第三方登录用户不需要密码
+        role: 'customer',
+      });
+      await this.usersRepository.save(user);
+    }
+
+    const payload = { username: user.username, sub: user.id };
+    return {
+      accessToken: this.jwtService.sign(payload),
+      user,
+    };
   }
 }

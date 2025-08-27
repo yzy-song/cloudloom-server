@@ -1,4 +1,10 @@
 /*
+ * @Author: yzy
+ * @Date: 2025-08-23 03:56:13
+ * @LastEditors: yzy
+ * @LastEditTime: 2025-08-27 15:44:45
+ */
+/*
  * 认证相关接口
  */
 import { Controller, Post, Body, UseGuards, Request, HttpStatus, HttpCode } from '@nestjs/common';
@@ -8,6 +14,7 @@ import { RegisterUserDto } from './dto/register-user.dto';
 import { LoginUserDto } from './dto/login-user.dto';
 import { User } from '../../core/entities/user.entity';
 import { AuthGuard } from '@nestjs/passport';
+import { OAuthLoginDto } from './dto/oauth-login.dto';
 
 @ApiTags('认证')
 @Controller('auth')
@@ -49,5 +56,22 @@ export class AuthController {
     // 将token加入黑名单（存储到Redis或数据库中）
     await this.authService.addToBlacklist(token);
     return { message: '成功登出' };
+  }
+
+  @Post('oauth-login')
+  @ApiOperation({ summary: '第三方登录（Firebase）', description: '第三方登录，首次自动注册' })
+  @ApiResponse({
+    status: 200,
+    description: '登录成功',
+    schema: {
+      properties: {
+        accessToken: { type: 'string', description: 'JWT 访问令牌' },
+        user: { $ref: '#/components/schemas/User' },
+      },
+    },
+  })
+  @ApiResponse({ status: 401, description: '无效的 token' })
+  async oauthLogin(@Body() dto: OAuthLoginDto): Promise<{ accessToken: string; user: User }> {
+    return this.authService.oauthLogin(dto);
   }
 }

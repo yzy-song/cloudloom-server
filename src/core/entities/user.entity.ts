@@ -1,4 +1,10 @@
 /*
+ * @Author: yzy
+ * @Date: 2025-08-23 03:57:16
+ * @LastEditors: yzy
+ * @LastEditTime: 2025-08-27 13:22:24
+ */
+/*
  * 用户实体，存储注册用户的基本信息和权限
  */
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, Index } from 'typeorm';
@@ -26,6 +32,10 @@ export class User {
   @ApiProperty({ description: '电话', required: false, example: '13800000000' })
   @Column({ length: 50, nullable: true })
   phone: string;
+
+  @ApiProperty({ description: '昵称', required: false, example: '我是昵称' })
+  @Column({ name: 'nickname', length: 50, nullable: true })
+  nickName: string;
 
   @ApiProperty({ description: '密码哈希', readOnly: true })
   @Column({ name: 'password_hash', length: 255 })
