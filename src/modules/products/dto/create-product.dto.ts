@@ -2,7 +2,7 @@
  * @Author: yzy
  * @Date: 2025-08-19 23:09:20
  * @LastEditors: yzy
- * @LastEditTime: 2025-08-24 23:20:31
+ * @LastEditTime: 2025-08-27 23:13:03
  */
 import { IsArray, IsBoolean, IsNumber, IsOptional, IsString, Min, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
@@ -73,8 +73,7 @@ export class CreateProductDto {
   careInstructions?: string;
 
   @IsNumber()
-  @IsOptional()
-  categoryId?: number;
+  categoryId: number;
 
   @IsBoolean()
   @IsOptional()

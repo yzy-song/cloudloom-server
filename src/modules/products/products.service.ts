@@ -2,7 +2,7 @@
  * @Author: yzy
  * @Date: 2025-08-19 23:12:29
  * @LastEditors: yzy
- * @LastEditTime: 2025-08-26 13:37:06
+ * @LastEditTime: 2025-08-27 23:18:43
  */
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -11,6 +11,7 @@ import { Product } from '../../core/entities/product.entity';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { AppLogger } from '../../utils/logger';
+import { Category } from 'src/core/entities/category.entity';
 export interface FindAllProductsParams {
   page?: number;
   limit?: number;
@@ -24,10 +25,22 @@ export class ProductsService {
   constructor(
     @InjectRepository(Product)
     private readonly productRepository: Repository<Product>,
+
+    @InjectRepository(Category)
+    private readonly categoryRepository: Repository<Category>,
+
     private readonly logger: AppLogger // 依赖注入
   ) {}
 
   async create(createProductDto: CreateProductDto): Promise<Product> {
+    // 验证分类是否存在
+    const category = await this.categoryRepository.findOne({
+      where: { id: createProductDto.categoryId },
+    });
+
+    if (!category) {
+      throw new NotFoundException(`分类ID ${createProductDto.categoryId} 不存在`);
+    }
     const product = this.productRepository.create(createProductDto);
     return await this.productRepository.save(product);
   }
