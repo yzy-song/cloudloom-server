@@ -2,10 +2,7 @@
  * @Author: yzy
  * @Date: 2025-08-23 03:56:13
  * @LastEditors: yzy
- * @LastEditTime: 2025-08-27 15:44:45
- */
-/*
- * 认证相关接口
+ * @LastEditTime: 2025-08-27 21:11:11
  */
 import { Controller, Post, Body, UseGuards, Request, HttpStatus, HttpCode } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';

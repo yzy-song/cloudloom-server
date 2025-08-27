@@ -2,12 +2,14 @@
  * @Author: yzy
  * @Date: 2025-08-20 11:05:48
  * @LastEditors: yzy
- * @LastEditTime: 2025-08-20 11:06:24
+ * @LastEditTime: 2025-08-27 21:47:30
  */
 module.exports = {
   apps: [{
     name: 'cloudloom-server',
-    script: 'dist/main.js',
+    script: './current/main.js', // <-- 关键修改：PM2将通过这个路径来启动服务
+    cwd: '/var/www/cloudloom-server', // 确保PM2的工作目录在项目根目录
+    
     instances: 'max',
     exec_mode: 'cluster',
     env: {
