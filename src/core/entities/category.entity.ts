@@ -1,7 +1,7 @@
 /*
  * 产品分类实体
  */
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 import { Product } from './product.entity';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
@@ -18,6 +18,15 @@ export class Category {
   @ApiPropertyOptional({ description: '分类描述', example: '汉服女装系列' })
   @Column({ type: 'text', nullable: true })
   description: string;
+
+  @CreateDateColumn({ name: 'created_at' })
+  createdAt: Date;
+
+  @UpdateDateColumn({ name: 'updated_at' })
+  updatedAt: Date;
+
+  @Column({ type: 'boolean', default: true, name: 'is_active' })
+  isActive: boolean;
 
   @ApiPropertyOptional({ description: '分类图片URL', example: 'https://example.com/cat.png' })
   @Column({ name: 'image_url', type: 'text', nullable: true })

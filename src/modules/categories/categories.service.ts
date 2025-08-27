@@ -2,7 +2,7 @@
  * @Author: yzy
  * @Date: 2025-08-23 04:22:24
  * @LastEditors: yzy
- * @LastEditTime: 2025-08-24 23:44:54
+ * @LastEditTime: 2025-08-27 22:43:54
  */
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -51,5 +51,19 @@ export class CategoriesService {
     if (result.affected === 0) {
       throw new NotFoundException(`Category with ID ${id} not found`);
     }
+  }
+
+  // 在服务层添加软删除方法
+  async softRemove(id: number): Promise<void> {
+    await this.categoryRepository.update(id, {
+      isActive: false,
+    });
+  }
+
+  // 查询时自动过滤已删除记录
+  async findActive(): Promise<Category[]> {
+    return this.categoryRepository.find({
+      where: { isActive: true },
+    });
   }
 }
