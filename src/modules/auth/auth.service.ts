@@ -2,7 +2,7 @@
  * @Author: yzy
  * @Date: 2025-08-23 03:56:23
  * @LastEditors: yzy
- * @LastEditTime: 2025-08-27 15:36:56
+ * @LastEditTime: 2025-08-28 01:33:11
  */
 import { Injectable, UnauthorizedException, ConflictException, Inject } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
@@ -139,7 +139,6 @@ export class AuthService {
       where: [{ email: decoded.email }, { username: decoded.uid }],
     });
 
-    this.logger.log(`Firebase OAuth 登录: ${decoded.uid} (${decoded.email})`);
     if (!user) {
       // 自动注册
       user = this.usersRepository.create({
