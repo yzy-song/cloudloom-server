@@ -2,10 +2,8 @@
  * @Author: yzy
  * @Date: 2025-08-20 16:35:27
  * @LastEditors: yzy
- * @LastEditTime: 2025-08-28 08:48:15
+ * @LastEditTime: 2025-08-28 08:57:29
  */
-// src/main.ts
-
 // --- 关键改动：在最顶部直接加载 .env 文件 ---
 import * as dotenv from 'dotenv';
 import { resolve } from 'path'; // 导入 path 模块的 resolve 方法
