@@ -2,12 +2,12 @@
  * @Author: yzy
  * @Date: 2025-08-20 11:05:48
  * @LastEditors: yzy
- * @LastEditTime: 2025-08-28 00:29:33
+ * @LastEditTime: 2025-08-28 12:17:14
  */
 module.exports = {
   apps: [{
     name: 'cloudloom-server',
-    script: 'dist/main.js',
+    script: '/current/main.js',
     instances: 'max',
     exec_mode: 'cluster',
     env: {
