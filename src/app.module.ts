@@ -2,7 +2,7 @@
  * @Author: yzy
  * @Date: 2025-08-19 21:45:37
  * @LastEditors: yzy
- * @LastEditTime: 2025-08-28 02:46:13
+ * @LastEditTime: 2025-08-28 10:27:15
  */
 // src/app.module.ts
 import { Module } from '@nestjs/common';
@@ -46,8 +46,8 @@ import { resolve } from 'path';
       inject: [ConfigService],
     }),
     LoggerModule,
-    AuthModule,
-    PaymentsModule,
+    // AuthModule,
+    // PaymentsModule,
     ProductsModule,
     BookingsModule,
     NotificationsModule,
