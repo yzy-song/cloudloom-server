@@ -2,7 +2,7 @@
  * @Author: yzy
  * @Date: 2025-08-20 16:35:27
  * @LastEditors: yzy
- * @LastEditTime: 2025-08-28 09:05:12
+ * @LastEditTime: 2025-08-28 09:13:51
  */
 // --- 关键改动：在最顶部直接加载 .env 文件 ---
 import * as dotenv from 'dotenv';
@@ -38,6 +38,7 @@ try {
 // 确保在 NestFactory.create 之前加载环境变量
 // 再次检查关键环境变量的值
 console.log(`[DOTENV DEBUG] process.env.FIREBASE_PROJECT_ID (after dotenv): ${process.env.FIREBASE_PROJECT_ID}`);
+console.log(`[DOTENV DEBUG] process.env.FIREBASE_CLIENT_EMAIL (after dotenv): ${process.env.FIREBASE_CLIENT_EMAIL}`);
 console.log(`[DOTENV DEBUG] process.env.FIREBASE_PRIVATE_KEY (first 50 chars, after dotenv): ${process.env.FIREBASE_PRIVATE_KEY ? process.env.FIREBASE_PRIVATE_KEY.substring(0, 50) + '...' : 'N/A'}`);
 console.log('--- Dotenv Debugging Ended ---');
 
