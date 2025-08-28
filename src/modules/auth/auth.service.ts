@@ -2,7 +2,7 @@
  * @Author: yzy
  * @Date: 2025-08-23 03:56:23
  * @LastEditors: yzy
- * @LastEditTime: 2025-08-28 02:38:35
+ * @LastEditTime: 2025-08-28 10:05:11
  */
 import { Injectable, UnauthorizedException, ConflictException, Inject } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
@@ -36,9 +36,14 @@ export class AuthService {
     this.logger.setContext(AuthService.name);
 
     // 获取环境变量并立即打印它们
-    const privateKey = this.configService.get<string>('FIREBASE_PRIVATE_KEY');
-    const clientEmail = this.configService.get<string>('FIREBASE_CLIENT_EMAIL');
-    const projectId = this.configService.get<string>('FIREBASE_PROJECT_ID');
+    // const privateKey = this.configService.get<string>('FIREBASE_PRIVATE_KEY');
+    // const clientEmail = this.configService.get<string>('FIREBASE_CLIENT_EMAIL');
+    // const projectId = this.configService.get<string>('FIREBASE_PROJECT_ID');
+
+    const projectId = 'cloudloom-ac7e2';
+    const clientEmail = 'firebase-adminsdk-fbsvc@cloudloom-ac7e2.iam.gserviceaccount.com';
+    const privateKey =
+      '-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDD5ayd76N+q2rz\nZp524CCjUaNbfkHT2CM8N4iR5hHfjF3xCx1awgixRqDbCiwFGY+ikp7+RmydaJd7\nJGYadQPbKh17qSOFqoyOQSqSR1zYmDxZZPKVUXsWCmCzvJiIqBE3xNWll0jjrnyZ\nQScDRthkcP0no1SQn68mIldhKFGnhgWJIi3Ujgu8pDYCZ7+EKm7PHeZr5qs5jSxA\nXylBC+9MfYXeF9Yj/a6jMb6XCZp71TPr7z2Y/s3x5FIIX4kqlFGFmhGECQC6enaj\nlK7hbrWTbTUmgGW/F+7QNFpvCxDIPM8UC1T3YgvUo8nUS1cz78qqPKFhqsrnl7rF\n74j1svpvAgMBAAECggEAVlLt25T/r3B7SzHjz4+ZYk611ToQaPlcIYt5N42yP5fb\nx731nApYCUKN3KghWMf4RxQkUvmWoFC4O/AAvFTnM5td7aHNgPf0QzWNPHONAvcm\n1N/KlCkZO8+r6FhJwSKKn9Axs2w0lvxLdL9EoUmFTtGJhP+Q4sAzTvMgHTTGsrJz\nVyqXEyPu34LP3WBp8tE0lT7ytREdanq3rX34W21csrDXh7Nu3oEFLSPZs8fhtWgs\nehpFucXcwiNafgHvQA55wqwHIVAMvXicMmL5ibCrsnfT8KlTZfui7/KIuGZ1PUTo\ncv6WL6MRs4ku8AhIN8CG61ygHXzRpnDe25r6gbuSFQKBgQDoy/IHniQGlgZgXmtp\nOU56pW9TV4gnD1p3v0zPHGTUH5SULyB6dRUDxgFjqnqQH5jn0Ai8Ap8yvuVqDNmv\nsB9hLOX69J9su5w1uPzknlPhkO4+vG+nBWJr27aIdeEToOneWU5bu0ceZLWcuzQ8\nS486bZcfPLcemCVh97CPcFNQOwKBgQDXbDLtFpPXoxEhdfEBZndP/WG4bf6XET97\nVM0s73/wBwOiBL9f0IqcI4hBkzjufO21+EkP9Vv/htWcMWWiSd5wu6ZmFrjElxN1\n9Oe4oj6ovcUW/JnMGoD1pGSRhCk1I6cejzIiDIy8GfNyQHoz4gcx/KiG4+agvEwQ\nMWaBK9wvXQKBgQCsAy5WNKK3/xi9EmdZe8+iTiVhNpdTDUQyoTa2/mr+Vktp5xyf\nf23EuQUDyM8BOWe5Of2KNoG9dFJ9tvsOlxvIqO1SLniyVjoJdCPhJaAjVvzDfGcf\nyZm8yr8oO7nQ0CCee+yrWUkmixGquqTRPJ+bc6irmyhPweo1Zlie1EerSwKBgD3Z\nUsW/NbMznjd9JTTBtn/Av82zxuSYjyFZt46vNIw1d1WNB2T6+tDZYsVw/2d5dsZI\nArISP9edXrb5d7SggLzdI2ksHOBUf8HeDqlz64mG8o8m9wEimuPrzvP4fdxD4Ddl\n5X7hG4bl7H9hA7ThsC8p2zjfNdfwN+ZuSH/Nl+oBAoGAFhQaHcBbsIf+s88py9X+\nLUmoN9TQ46whNeCQMZjslYe1/f8PAvx3xAJdJDKwjx4Mlfr+5BqlQ0TcsiysE1Pv\nwLkjIHforOHs51CNfxdT7k6955gelkk2vHUsP3TsrUoYDDvERcWE5/9u0rgcfK/X\nw65zl88umMsGrJmNVwmzSHU=\n-----END PRIVATE KEY-----\n';
 
     this.logger.log(`[DEBUG] process.env.FIREBASE_PROJECT_ID: ${process.env.FIREBASE_PROJECT_ID}`);
     this.logger.log(`[DEBUG] process.env.FIREBASE_CLIENT_EMAIL: ${process.env.FIREBASE_CLIENT_EMAIL}`);
