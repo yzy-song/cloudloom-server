@@ -2,7 +2,7 @@
  * @Author: yzy
  * @Date: 2025-08-23 03:56:23
  * @LastEditors: yzy
- * @LastEditTime: 2025-08-28 02:20:12
+ * @LastEditTime: 2025-08-28 02:38:35
  */
 import { Injectable, UnauthorizedException, ConflictException, Inject } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
@@ -39,6 +39,9 @@ export class AuthService {
     const privateKey = this.configService.get<string>('FIREBASE_PRIVATE_KEY');
     const clientEmail = this.configService.get<string>('FIREBASE_CLIENT_EMAIL');
     const projectId = this.configService.get<string>('FIREBASE_PROJECT_ID');
+
+    this.logger.log(`[DEBUG] process.env.FIREBASE_PROJECT_ID: ${process.env.FIREBASE_PROJECT_ID}`);
+    this.logger.log(`[DEBUG] process.env.FIREBASE_CLIENT_EMAIL: ${process.env.FIREBASE_CLIENT_EMAIL}`);
 
     this.logger.log(`[Firebase Init] Project ID: ${projectId}`);
     this.logger.log(`[Firebase Init] Client Email: ${clientEmail}`);
