@@ -2,7 +2,7 @@
  * @Author: yzy
  * @Date: 2025-08-19 21:45:37
  * @LastEditors: yzy
- * @LastEditTime: 2025-08-28 11:01:45
+ * @LastEditTime: 2025-08-28 14:10:54
  */
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
@@ -17,6 +17,9 @@ async function bootstrap() {
   app.enableCors({
     origin: configService.get('CORS_ORIGINS').split(','), // 从环境变量读取
     credentials: true,
+    crossOriginOpenerPolicy: {
+      policy: 'same-origin', // 或 'same-origin-allow-popups'（允许弹出窗口）
+    },
   });
 
   // 设置全局前缀
