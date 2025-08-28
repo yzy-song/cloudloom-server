@@ -2,7 +2,7 @@
  * @Author: yzy
  * @Date: 2025-08-20 16:35:27
  * @LastEditors: yzy
- * @LastEditTime: 2025-08-28 08:25:15
+ * @LastEditTime: 2025-08-28 08:48:15
  */
 // src/main.ts
 
@@ -12,9 +12,6 @@ import { resolve } from 'path'; // 导入 path 模块的 resolve 方法
 import { NestFactory } from '@nestjs/core'; // 提前导入 NestFactory 以便使用 NestJS 的日志系统
 import { AppModule } from './app.module';
 
-// --- 添加 NestJS Logger，以便在应用启动前也能输出到 PM2 日志 ---
-// NestJS 的 Logger 需要上下文，这里我们用一个简化的方式在应用创建前输出
-// 通常在应用创建后才使用 NestJS 的 Logger，这里是一个临时方案
 // 或者直接使用 console.log，因为 dotenv 在 NestJS Logger 初始化之前执行
 console.log('--- Dotenv Debugging Started ---');
 
