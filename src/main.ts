@@ -2,7 +2,7 @@
  * @Author: yzy
  * @Date: 2025-08-19 21:45:37
  * @LastEditors: yzy
- * @LastEditTime: 2025-08-28 14:10:54
+ * @LastEditTime: 2025-08-28 16:22:04
  */
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';

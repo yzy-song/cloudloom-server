@@ -2,7 +2,7 @@
  * @Author: yzy
  * @Date: 2025-08-23 03:56:23
  * @LastEditors: yzy
- * @LastEditTime: 2025-08-28 10:52:38
+ * @LastEditTime: 2025-08-28 16:27:30
  */
 import { Injectable, UnauthorizedException, ConflictException, Inject } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
@@ -34,6 +34,11 @@ export class AuthService {
     private readonly logger: AppLogger
   ) {
     this.logger.setContext(AuthService.name);
+
+    const test1 = this.configService.get<string>('CORS_ORIGINS');
+    const test2 = this.configService.get<string>('CORS_ORIGINS')?.split(',');
+    this.logger.log(`[CORS] 1111  Origins: ${test1}`);
+    this.logger.log(`[CORS] 2222  Origins: ${test2?.length}`);
 
     // 获取环境变量并立即打印它们
     const privateKey = this.configService.get<string>('FIREBASE_PRIVATE_KEY');
