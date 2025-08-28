@@ -2,7 +2,7 @@
  * @Author: yzy
  * @Date: 2025-08-19 21:45:37
  * @LastEditors: yzy
- * @LastEditTime: 2025-08-26 02:38:37
+ * @LastEditTime: 2025-08-28 02:18:27
  */
 // src/app.module.ts
 import { Module } from '@nestjs/common';
@@ -23,7 +23,12 @@ import { LoggerModule } from './utils/logger.module';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: '.env',
+      // 当 PM2 的 ecosystem.config.js 已经通过 env_file 注入了环境变量时，
+      // 这里的 envFilePath 就可以移除。ConfigService 会直接从 process.env 读取。
+      // 如果你希望ConfigService也有自己的加载逻辑作为备用，则可以保留它，
+      // 但要确保路径是绝对的：envFilePath: resolve(process.cwd(), '.env'),
+      // 为了简化和避免潜在冲突，这里推荐移除：
+      // envFilePath: '.env', // <--- 移除或注释掉这一行
     }),
     TypeOrmModule.forRootAsync({
       useFactory: (configService: ConfigService) => ({

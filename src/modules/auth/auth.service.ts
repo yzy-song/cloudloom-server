@@ -2,7 +2,7 @@
  * @Author: yzy
  * @Date: 2025-08-23 03:56:23
  * @LastEditors: yzy
- * @LastEditTime: 2025-08-28 01:33:11
+ * @LastEditTime: 2025-08-28 02:20:12
  */
 import { Injectable, UnauthorizedException, ConflictException, Inject } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
@@ -35,13 +35,29 @@ export class AuthService {
   ) {
     this.logger.setContext(AuthService.name);
 
+    // 获取环境变量并立即打印它们
+    const privateKey = this.configService.get<string>('FIREBASE_PRIVATE_KEY');
+    const clientEmail = this.configService.get<string>('FIREBASE_CLIENT_EMAIL');
+    const projectId = this.configService.get<string>('FIREBASE_PROJECT_ID');
+
+    this.logger.log(`[Firebase Init] Project ID: ${projectId}`);
+    this.logger.log(`[Firebase Init] Client Email: ${clientEmail}`);
+    // 私钥可能很长，只打印开头一部分，避免日志过长或暴露过多敏感信息
+    this.logger.log(`[Firebase Init] Private Key (first 50 chars): ${privateKey ? privateKey.substring(0, 50) + '...' : 'N/A'}`);
+
+    if (!privateKey || !clientEmail || !projectId) {
+      this.logger.error('Firebase Admin SDK: Missing or invalid environment variables for initialization!');
+      // 抛出错误以停止应用，直到问题解决
+      throw new Error('Firebase Admin SDK: Missing or invalid credentials (privateKey, clientEmail, projectId)');
+    }
+
     // 用 ConfigService 初始化 firebase-admin
     if (!admin.apps.length) {
       admin.initializeApp({
         credential: admin.credential.cert({
-          projectId: this.configService.get<string>('FIREBASE_PROJECT_ID'),
-          clientEmail: this.configService.get<string>('FIREBASE_CLIENT_EMAIL'),
-          privateKey: this.configService.get<string>('FIREBASE_PRIVATE_KEY')?.replace(/\\n/g, '\n'),
+          projectId: projectId,
+          clientEmail: clientEmail,
+          privateKey: privateKey.replace(/\\n/g, '\n'), // 确保处理私钥中的换行符
         }),
       });
     }
