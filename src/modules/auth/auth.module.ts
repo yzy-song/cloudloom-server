@@ -2,7 +2,7 @@
  * @Author: yzy
  * @Date: 2025-08-23 03:55:58
  * @LastEditors: yzy
- * @LastEditTime: 2025-08-23 23:28:04
+ * @LastEditTime: 2025-08-28 12:59:36
  */
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -32,7 +32,7 @@ import { JwtStrategy } from './jwt.strategy';
     ConfigModule,
     // ✅ 在这里添加 CacheModule
     CacheModule.register({
-      ttl: 60 * 60 * 1000, // 缓存一小时，你可以根据需要调整
+      ttl: 120 * 60 * 1000, // 缓存2小时，你可以根据需要调整
     }),
   ],
   providers: [AuthService, JwtStrategy],
