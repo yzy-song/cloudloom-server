@@ -2,7 +2,7 @@
  * @Author: yzy
  * @Date: 2025-08-23 03:55:58
  * @LastEditors: yzy
- * @LastEditTime: 2025-08-28 12:59:36
+ * @LastEditTime: 2025-08-29 19:33:15
  */
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -14,10 +14,12 @@ import { CacheModule } from '@nestjs/cache-manager';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { User } from '../../core/entities/user.entity';
+import { Role } from '../../core/entities/role.entity';
+import { UserRole } from '../../core/entities/user-role.entity';
 import { JwtStrategy } from './jwt.strategy';
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User]),
+    TypeOrmModule.forFeature([User, Role, UserRole]),
     PassportModule,
     // ✅ 确保这里是正确的异步配置
     JwtModule.registerAsync({

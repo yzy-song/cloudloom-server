@@ -2,7 +2,7 @@
  * @Author: yzy
  * @Date: 2025-08-23 03:56:23
  * @LastEditors: yzy
- * @LastEditTime: 2025-08-28 16:27:30
+ * @LastEditTime: 2025-08-29 19:34:19
  */
 import { Injectable, UnauthorizedException, ConflictException, Inject } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
@@ -19,12 +19,20 @@ import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { AppLogger } from '../../utils/logger';
 import * as admin from 'firebase-admin';
 import { ConfigService } from '@nestjs/config';
+import { Role } from '../../core/entities/role.entity';
+import { UserRole } from '../../core/entities/user-role.entity';
 
 @Injectable()
 export class AuthService {
   constructor(
     @InjectRepository(User)
     private usersRepository: Repository<User>,
+
+    @InjectRepository(Role)
+    private roleRepository: Repository<Role>,
+
+    @InjectRepository(UserRole)
+    private userRoleRepository: Repository<UserRole>,
 
     @Inject(CACHE_MANAGER) // ✅ 放在 cacheManager 前面
     private cacheManager: Cache,
@@ -35,19 +43,10 @@ export class AuthService {
   ) {
     this.logger.setContext(AuthService.name);
 
-    const test1 = this.configService.get<string>('CORS_ORIGINS');
-    const test2 = this.configService.get<string>('CORS_ORIGINS')?.split(',');
-    this.logger.log(`[CORS] 1111  Origins: ${test1}`);
-    this.logger.log(`[CORS] 2222  Origins: ${test2?.length}`);
-
     // 获取环境变量并立即打印它们
     const privateKey = this.configService.get<string>('FIREBASE_PRIVATE_KEY');
     const clientEmail = this.configService.get<string>('FIREBASE_CLIENT_EMAIL');
     const projectId = this.configService.get<string>('FIREBASE_PROJECT_ID');
-    this.logger.log(`[Firebase Init] Project ID: ${projectId}`);
-    this.logger.log(`[Firebase Init] Client Email: ${clientEmail}`);
-    // 私钥可能很长，只打印开头一部分，避免日志过长或暴露过多敏感信息
-    this.logger.log(`[Firebase Init] Private Key (first 50 chars): ${privateKey ? privateKey.substring(0, 50) + '...' : 'N/A'}`);
 
     if (!privateKey || !clientEmail || !projectId) {
       this.logger.error('Firebase Admin SDK: Missing or invalid environment variables for initialization!');
@@ -88,8 +87,18 @@ export class AuthService {
       email,
       passwordHash: hashedPassword,
     });
+    const savedUser = await this.usersRepository.save(newUser);
 
-    return this.usersRepository.save(newUser);
+    // 查找“普通用户”角色
+    const role = await this.roleRepository.findOne({ where: { name: 'customer' } });
+    if (role) {
+      await this.userRoleRepository.save({
+        userId: savedUser.id,
+        roleId: role.id,
+      });
+    }
+
+    return savedUser;
   }
 
   async login(loginUserDto: LoginUserDto): Promise<{ accessToken: string; user: User }> {
@@ -144,15 +153,12 @@ export class AuthService {
   }
 
   async oauthLogin(dto: OAuthLoginDto): Promise<{ accessToken: string; user: User }> {
-    this.logger.log(`开始 Firebase OAuth 登录: ${dto.idToken}`);
     let decoded;
     try {
       decoded = await admin.auth().verifyIdToken(dto.idToken);
     } catch (e) {
       throw new UnauthorizedException('无效的 firebase token');
     }
-
-    this.logger.log(`Firebase Token 验证成功: ${JSON.stringify(decoded)}`);
 
     // decoded.uid, decoded.email, decoded.name, decoded.picture
     let user = await this.usersRepository.findOne({
@@ -167,7 +173,6 @@ export class AuthService {
         nickName: decoded.name,
         avatarUrl: decoded.picture,
         passwordHash: '', // 第三方登录用户不需要密码
-        role: 'customer',
       });
       await this.usersRepository.save(user);
     }

@@ -2,17 +2,16 @@
  * @Author: yzy
  * @Date: 2025-08-23 03:57:16
  * @LastEditors: yzy
- * @LastEditTime: 2025-08-27 13:22:24
+ * @LastEditTime: 2025-08-29 19:27:02
  */
 /*
  * 用户实体，存储注册用户的基本信息和权限
  */
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, Index } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, Index, OneToMany } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { Exclude } from 'class-transformer';
 import * as bcrypt from 'bcrypt';
-
-export type UserRole = 'customer' | 'admin';
+import { UserRole } from './user-role.entity';
 
 @Entity('users')
 @Index('idx_users_email', ['email'])
@@ -42,10 +41,6 @@ export class User {
   @Exclude() // 确保密码哈希不会被意外地序列化到响应中
   passwordHash: string;
 
-  @ApiProperty({ description: '用户角色', enum: ['customer', 'admin'], example: 'customer' })
-  @Column({ length: 20, default: 'customer' })
-  role: UserRole;
-
   @ApiProperty({ description: '头像URL', required: false, example: 'https://example.com/avatar.png' })
   @Column('text', { name: 'avatar_url', nullable: true })
   avatarUrl: string;
@@ -57,6 +52,9 @@ export class User {
   @ApiProperty({ description: '更新时间', example: '2025-08-23T06:29:13.000Z' })
   @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz', default: () => 'NOW()' })
   updatedAt: Date;
+
+  @OneToMany(() => UserRole, userRole => userRole.user)
+  userRoles: UserRole[];
 
   /**
    * 密码哈希处理
