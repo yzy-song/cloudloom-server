@@ -110,43 +110,39 @@ backup_current_version() {
     fi
 }
 
-# Install dependencies for the database check utility
-echo -e "${YELLOW}Installing utility dependencies...${NC}"
-npm install typeorm dotenv # and any other needed modules
-
 # 数据库连接检查函数
 check_db_connection() {
     echo -e "${YELLOW}Checking database connection...${NC}"
     
     # 数据库连接验证脚本
     local DB_CHECK_SCRIPT="
-import { DataSource } from 'typeorm';
-import { config } from 'dotenv';
-config();
+        const { DataSource } = require('typeorm');
+        const { config } = require('dotenv');
+        config();
 
-const AppDataSource = new DataSource({
-    type: 'postgres',
-    host: process.env.DB_HOST,
-    port: parseInt(process.env.DB_PORT || '5432'),
-    username: process.env.DB_USERNAME,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_DATABASE,
-    extra: { 
-        connectTimeout: ${DB_CHECK_TIMEOUT}000,
-        ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false
-    }
-});
+        const AppDataSource = new DataSource({
+            type: 'postgres',
+            host: process.env.DB_HOST,
+            port: parseInt(process.env.DB_PORT || '5432'),
+            username: process.env.DB_USERNAME,
+            password: process.env.DB_PASSWORD,
+            database: process.env.DB_DATABASE,
+            extra: {
+                connectTimeout: ${DB_CHECK_TIMEOUT}000,
+                ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false
+            }
+        });
 
-AppDataSource.initialize()
-    .then(() => {
-        console.log('Database connection successful');
-        process.exit(0);
-    })
-    .catch(err => {
-        console.error('Database connection failed:', err);
-        process.exit(1);
-    });
-"
+        AppDataSource.initialize()
+            .then(() => {
+                console.log('Database connection successful');
+                process.exit(0);
+            })
+            .catch(err => {
+                console.error('Database connection failed:', err);
+                process.exit(1);
+            });
+    "
     timeout ${DB_CHECK_TIMEOUT} node -e "${DB_CHECK_SCRIPT}" && {
         echo -e "${GREEN}✓ Database connection verified${NC}"
         return 0
@@ -244,19 +240,19 @@ else
     echo -e "${RED}Warning: .env file not found at ${ENV_FILE}, some checks will be skipped${NC}"
 fi
 
-# 5. 数据库连接检查
-# 仅在 .env 存在时执行检查
-[ -f "${ENV_FILE}" ] && check_db_connection || {
-    echo -e "${YELLOW}⚠ Proceeding without database connection verification${NC}"
-}
-
-# 6. 安装依赖
-echo -e "${YELLOW}Installing dependencies...${NC}"
-npm install --production || {
+# 5. 安装所有依赖
+echo -e "${YELLOW}Installing all dependencies...${NC}"
+npm install || {
     echo -e "${RED}✗ Failed to install dependencies${NC}"
     log_error "npm_install_failed"
     rollback_deployment
     exit 1
+}
+
+# 6. 数据库连接检查
+# 仅在 .env 存在时执行检查
+[ -f "${ENV_FILE}" ] && check_db_connection || {
+    echo -e "${YELLOW}⚠ Proceeding without database connection verification${NC}"
 }
 
 # 7. 构建项目
