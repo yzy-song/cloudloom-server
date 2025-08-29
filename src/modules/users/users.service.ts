@@ -36,7 +36,7 @@ export class UsersService {
   }
 
   async remove(id: string) {
-    this.logger.log(`Removing user from database : ${id}`);
+    this.logger.log(`Removing user from database with id: ${id}`);
     return this.userRepo.delete(id);
   }
 }
