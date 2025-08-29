@@ -1,25 +1,12 @@
-/*
- * @Author: yzy
- * @Date: 2025-08-23 03:56:41
- * @LastEditors: yzy
- * @LastEditTime: 2025-08-29 21:24:16
- */
-/*
- * 用户注册请求体
- */
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsString, IsNotEmpty, IsEmail, MinLength, MaxLength } from 'class-validator';
 
-export class RegisterUserDto {
+export class CreateUserDto {
   @ApiProperty({ description: '用户名', example: 'testuser' })
   @IsString()
   @MinLength(3, { message: '用户名至少需要3个字符' })
   @MaxLength(50, { message: '用户名不能超过50个字符' })
   username: string;
-
-  @ApiProperty({ description: '头像URL', example: 'https://example.com/avatar.png' })
-  @IsString()
-  avatarUrl?: string;
 
   @ApiProperty({ description: '邮箱', example: 'test@example.com' })
   @IsNotEmpty()
