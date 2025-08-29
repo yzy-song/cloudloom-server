@@ -1,0 +1,109 @@
+#!/bin/bash
+###
+ # @Author: yzy
+ # @Date: 2025-08-29 22:53:34
+ # @LastEditors: yzy
+ # @LastEditTime: 2025-08-29 22:55:33
+### 
+# 任何命令失败时立即退出
+set -e
+
+
+#####################################################################################
+
+# 手动回滚到指定版本
+# 查看可用版本
+# ls -t /var/www/cloudloom-server/releases
+
+# 回滚到特定版本（使用时间戳目录名）
+# /var/www/cloudloom-server/scripts/rollback.sh 20240830120000
+
+#####################################################################################
+
+
+
+# 颜色定义
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # 无色
+
+# 部署配置
+DEPLOY_ROOT="/var/www/cloudloom-server"
+RELEASES_DIR="$DEPLOY_ROOT/releases"
+CURRENT_SYMLINK="$DEPLOY_ROOT/current"
+BACKUPS_DIR="$DEPLOY_ROOT/backups"
+LOG_FILE="$DEPLOY_ROOT/deploy.log"
+
+# 时间戳
+TIMESTAMP=$(date +"%Y%m%d%H%M%S")
+
+# 初始化日志
+log() {
+    echo "[$TIMESTAMP] $1" | tee -a "$LOG_FILE"
+}
+
+# 验证参数
+if [ $# -ne 1 ]; then
+    echo -e "${RED}Usage: $0 [version_timestamp]${NC}"
+    echo -e "Example: $0 20240830120000${NC}"
+    exit 1
+fi
+
+TARGET_VERSION=$1
+LATEST_VERSION=$(ls -t "$RELEASES_DIR" | head -n 1)
+
+# 查找目标版本目录
+TARGET_PATH="$RELEASES_DIR/$TARGET_VERSION"
+if [ ! -d "$TARGET_PATH" ]; then
+    echo -e "${RED}Error: Version $TARGET_VERSION not found${NC}"
+    echo -e "Available versions: $(ls -t $RELEASES_DIR | tr '\n' ' ')" | tee -a "$LOG_FILE"
+    exit 1
+fi
+
+# 备份当前版本
+backup_current() {
+    echo -e "${YELLOW}Backing up current version...${NC}"
+    BACKUP_NAME="before-rollback-$TIMESTAMP"
+    tar -czf "$BACKUPS_DIR/$BACKUP_NAME.tar.gz" -C "$CURRENT_SYMLINK" . || {
+        echo -e "${YELLOW}⚠ Backup failed, continuing rollback...${NC}"
+    }
+}
+
+# 执行回滚
+perform_rollback() {
+    echo -e "${YELLOW}Rolling back to version: $TARGET_VERSION${NC}"
+    
+    # 切换符号链接
+    ln -nfs "$TARGET_PATH/dist" "$CURRENT_SYMLINK" || {
+        echo -e "${RED}✗ Failed to update symlink${NC}"
+        exit 1
+    }
+    
+    # 重启服务
+    echo -e "${YELLOW}Restarting application...${NC}"
+    pm2 restart ecosystem.config.js --env production || {
+        echo -e "${RED}✗ Failed to restart PM2${NC}"
+        exit 1
+    }
+}
+
+# 清理旧备份
+cleanup_backups() {
+    echo -e "${YELLOW}Cleaning old backups...${NC}"
+    ls -t "$BACKUPS_DIR" | tail -n +6 | xargs -I {} rm -rf "$BACKUPS_DIR/{}"
+}
+
+# 主流程
+main() {
+    log "Starting rollback process"
+    backup_current
+    perform_rollback
+    cleanup_backups
+    log "Rollback completed successfully"
+    echo -e "${GREEN}✓ Rollback to $TARGET_VERSION succeeded!${NC}"
+}
+
+# 执行主流程
+main
