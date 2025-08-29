@@ -3,12 +3,14 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { User } from '../../core/entities/user.entity';
 import { Repository } from 'typeorm';
 import { CreateUserDto, UpdateUserDto } from './dto';
-
+import { AppLogger } from '../../utils/logger';
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(User)
-    private readonly userRepo: Repository<User>
+    private readonly userRepo: Repository<User>,
+
+    private readonly logger: AppLogger
   ) {}
 
   async findAll({ page, limit }) {
@@ -34,6 +36,7 @@ export class UsersService {
   }
 
   async remove(id: string) {
+    this.logger.log(`Removing user with id: ${id}`);
     return this.userRepo.delete(id);
   }
 }
