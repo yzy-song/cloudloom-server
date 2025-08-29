@@ -110,6 +110,10 @@ backup_current_version() {
     fi
 }
 
+# Install dependencies for the database check utility
+echo -e "${YELLOW}Installing utility dependencies...${NC}"
+npm install typeorm dotenv # and any other needed modules
+
 # 数据库连接检查函数
 check_db_connection() {
     echo -e "${YELLOW}Checking database connection...${NC}"
