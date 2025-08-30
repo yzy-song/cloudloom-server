@@ -45,6 +45,10 @@ export class User {
   @Column('text', { name: 'avatar_url', nullable: true })
   avatarUrl: string;
 
+  @ApiProperty({ description: '个人简介', required: false, example: '这个人很懒，什么都没有写' })
+  @Column('text', { name: 'description', nullable: true })
+  description: string;
+
   @ApiProperty({ description: '创建时间', example: '2025-08-23T03:57:16.000Z' })
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz', default: () => 'NOW()' })
   createdAt: Date;

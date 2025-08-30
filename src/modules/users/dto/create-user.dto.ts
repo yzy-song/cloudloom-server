@@ -25,4 +25,9 @@ export class CreateUserDto {
   @IsString()
   @MaxLength(50)
   phone: string;
+
+  @ApiPropertyOptional({ description: '个人简介', example: '这个人很懒，什么都没有写' })
+  @IsString()
+  @MaxLength(500)
+  description?: string;
 }

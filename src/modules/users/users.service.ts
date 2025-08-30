@@ -35,6 +35,12 @@ export class UsersService {
     return this.findOne(id);
   }
 
+  // 修改个人信息（如有特殊逻辑可单独实现）
+  async updateProfile(id: string, dto: UpdateUserDto) {
+    // 可在此添加额外校验
+    return this.update(id, dto);
+  }
+
   async remove(id: string) {
     this.logger.log(`Removing user from database with id: ${id}`);
     return this.userRepo.delete(id);
