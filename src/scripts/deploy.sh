@@ -252,7 +252,7 @@ npx nest build || {
 
 # 7.5. 数据库结构迁移
 echo -e "${YELLOW}Running database migrations...${NC}"
-npx typeorm migration:run --dataSource data-source.ts || {
+npx ts-node --transpile-only ./node_modules/typeorm/cli.js migration:run --dataSource data-source.ts || {
     echo -e "${RED}✗ Failed to run migrations${NC}"
     log_error "migration_failed"
     rollback_deployment
