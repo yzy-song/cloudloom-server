@@ -3,24 +3,15 @@
  # @Author: yzy
  # @Date: 2025-08-29 22:53:34
  # @LastEditors: yzy
- # @LastEditTime: 2025-08-29 22:55:33
-### 
+ # @LastEditTime: 2025-08-30 08:31:11
+###
 # 任何命令失败时立即退出
 set -e
 
-
-#####################################################################################
-
+# =========================================================================
 # 手动回滚到指定版本
-# 查看可用版本
-# ls -t /var/www/cloudloom-server/releases
-
-# 回滚到特定版本（使用时间戳目录名）
-# /var/www/cloudloom-server/scripts/rollback.sh 20240830120000
-
-#####################################################################################
-
-
+# 使用方法: /var/www/cloudloom-server/rollback.sh 20240830120000
+# =========================================================================
 
 # 颜色定义
 RED='\033[0;31m'
@@ -33,6 +24,7 @@ NC='\033[0m' # 无色
 DEPLOY_ROOT="/var/www/cloudloom-server"
 RELEASES_DIR="$DEPLOY_ROOT/releases"
 CURRENT_SYMLINK="$DEPLOY_ROOT/current"
+ECOSYSTEM_CONFIG_FILE="$DEPLOY_ROOT/ecosystem.config.js"
 BACKUPS_DIR="$DEPLOY_ROOT/backups"
 LOG_FILE="$DEPLOY_ROOT/deploy.log"
 
@@ -52,7 +44,6 @@ if [ $# -ne 1 ]; then
 fi
 
 TARGET_VERSION=$1
-LATEST_VERSION=$(ls -t "$RELEASES_DIR" | head -n 1)
 
 # 查找目标版本目录
 TARGET_PATH="$RELEASES_DIR/$TARGET_VERSION"
@@ -64,34 +55,38 @@ fi
 
 # 备份当前版本
 backup_current() {
-    echo -e "${YELLOW}Backing up current version...${NC}"
+    log "${YELLOW}Backing up current version...${NC}"
     BACKUP_NAME="before-rollback-$TIMESTAMP"
-    tar -czf "$BACKUPS_DIR/$BACKUP_NAME.tar.gz" -C "$CURRENT_SYMLINK" . || {
-        echo -e "${YELLOW}⚠ Backup failed, continuing rollback...${NC}"
-    }
+    if [ -d "$CURRENT_SYMLINK" ]; then
+        tar -czf "$BACKUPS_DIR/$BACKUP_NAME.tar.gz" -C "$CURRENT_SYMLINK" . || {
+            log "${YELLOW}⚠ Backup failed, continuing rollback...${NC}"
+        }
+    else
+        log "${YELLOW}No current version symlink found. Skipping backup.${NC}"
+    fi
 }
 
 # 执行回滚
 perform_rollback() {
-    echo -e "${YELLOW}Rolling back to version: $TARGET_VERSION${NC}"
+    log "${YELLOW}Rolling back to version: $TARGET_VERSION${NC}"
     
     # 切换符号链接
     ln -nfs "$TARGET_PATH/dist" "$CURRENT_SYMLINK" || {
-        echo -e "${RED}✗ Failed to update symlink${NC}"
+        log "${RED}✗ Failed to update symlink${NC}"
         exit 1
     }
     
     # 重启服务
-    echo -e "${YELLOW}Restarting application...${NC}"
-    pm2 restart ecosystem.config.js --env production || {
-        echo -e "${RED}✗ Failed to restart PM2${NC}"
+    log "${YELLOW}Restarting application...${NC}"
+    pm2 restart "${ECOSYSTEM_CONFIG_FILE}" --env production || {
+        log "${RED}✗ Failed to restart PM2${NC}"
         exit 1
     }
 }
 
 # 清理旧备份
 cleanup_backups() {
-    echo -e "${YELLOW}Cleaning old backups...${NC}"
+    log "${YELLOW}Cleaning old backups...${NC}"
     ls -t "$BACKUPS_DIR" | tail -n +6 | xargs -I {} rm -rf "$BACKUPS_DIR/{}"
 }
 
