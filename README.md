@@ -96,3 +96,63 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 ## License
 
 Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+
+# ============================================
+
+#数据迁移的标准流程如下：
+
+#1 生成 migration 文件（只在本地执行）
+
+#每次你修改了实体（entity）并需要同步到数据库时，执行：
+
+```bash
+npx ts-node --transpile-only ./node_modules/typeorm/cli.js migration:generate src/migrations/YourMigrationName --dataSource data-source.ts
+```
+
+#这会在 migrations 目录下生成 migration 文件。
+
+#本地可以用 migration:run 测试（可选）
+
+#你可以在本地数据库上执行 migration，确保无误：
+
+```bash
+npx ts-node --transpile-only ./node_modules/typeorm/cli.js migration:run --dataSource data-source.ts
+```
+
+#2 服务器（生产环境）执行
+
+#只需要执行 migration:run
+
+#服务器拉取最新代码和 migration 文件后，自动部署脚本会执行：
+
+```bash
+npx ts-node --transpile-only ./node_modules/typeorm/cli.js migration:run --dataSource data-source.ts
+```
+
+#这一步会让生产数据库结构和 migration 文件保持一致
+
+#总结
+
+#migration:generate —— 只在本地开发环境执行
+
+#migration:run —— 只在服务器（生产环境）执行（自动部署脚本里）
+
+# ============================================
+
+```sql
+DO $$
+DECLARE
+    r RECORD;
+BEGIN
+    FOR r IN
+        SELECT tablename
+        FROM pg_tables
+        WHERE schemaname = 'public'
+    LOOP
+        EXECUTE format('ALTER TABLE public.%I OWNER TO cloudloom;', r.tablename);
+    END LOOP;
+END
+$$;
+```
+
+# ============================================
