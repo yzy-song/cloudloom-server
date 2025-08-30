@@ -3,7 +3,7 @@
  # @Author: yzy
  # @Date: 2025-08-29 22:53:34
  # @LastEditors: yzy
- # @LastEditTime: 2025-08-30 08:31:11
+ # @LastEditTime: 2025-08-30 08:47:22
 ###
 # 任何命令失败时立即退出
 set -e
@@ -53,19 +53,6 @@ if [ ! -d "$TARGET_PATH" ]; then
     exit 1
 fi
 
-# 备份当前版本
-backup_current() {
-    log "${YELLOW}Backing up current version...${NC}"
-    BACKUP_NAME="before-rollback-$TIMESTAMP"
-    if [ -d "$CURRENT_SYMLINK" ]; then
-        tar -czf "$BACKUPS_DIR/$BACKUP_NAME.tar.gz" -C "$CURRENT_SYMLINK" . || {
-            log "${YELLOW}⚠ Backup failed, continuing rollback...${NC}"
-        }
-    else
-        log "${YELLOW}No current version symlink found. Skipping backup.${NC}"
-    fi
-}
-
 # 执行回滚
 perform_rollback() {
     log "${YELLOW}Rolling back to version: $TARGET_VERSION${NC}"
@@ -93,7 +80,6 @@ cleanup_backups() {
 # 主流程
 main() {
     log "Starting rollback process"
-    backup_current
     perform_rollback
     cleanup_backups
     log "Rollback completed successfully"

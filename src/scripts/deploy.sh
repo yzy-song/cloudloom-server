@@ -64,61 +64,44 @@ validate_environment() {
     fi
 }
 
+# 全局变量来保存上一个成功的版本路径
+LAST_SUCCESSFUL_PATH=""
+
 # 回滚机制
 rollback_deployment() {
     echo -e "${RED}Initiating automatic rollback process...${NC}"
     
-    # 查找上一个成功的部署版本
-    LAST_SUCCESSFUL=$(find "${RELEASES_DIR}" -maxdepth 1 -type d -printf '%T@ %p\n' | sort -nr | head -n 1 | awk '{print $2}')
-    
-    if [ -z "$LAST_SUCCESSFUL" ]; then
-        echo -e "${RED}✗ Cannot find any successful previous deployment for rollback${NC}"
+    # 使用之前保存的路径进行回滚
+    if [ -z "$LAST_SUCCESSFUL_PATH" ]; then
+        echo -e "${RED}✗ Cannot find a previous deployment to roll back to.${NC}"
         exit 1
     fi
     
-    echo -e "${YELLOW}Rolling back to version: ${LAST_SUCCESSFUL}${NC}"
-    
-    # 备份当前失败的版本
-    backup_current_version
+    echo -e "${YELLOW}Rolling back to previous version: ${LAST_SUCCESSFUL_PATH}${NC}"
     
     # 切换回上一个版本
-    ln -nfs "${LAST_SUCCESSFUL}/dist" "${CURRENT_SYMLINK}" || {
+    ln -nfs "${LAST_SUCCESSFUL_PATH}" "${CURRENT_SYMLINK}" || {
         echo -e "${RED}✗ Failed to switch back to previous version${NC}"
         exit 1
     }
     
     # 重启应用
     echo -e "${YELLOW}Restarting application after rollback...${NC}"
+    # PM2 配置文件路径已经传递，解决了之前的问题
     pm2 restart "${ECOSYSTEM_CONFIG_FILE}" --env production || {
         echo -e "${RED}✗ Failed to restart application after rollback${NC}"
         exit 1
     }
     
     echo -e "${GREEN}✓ Rollback completed successfully${NC}"
-    echo -e "${YELLOW}Run 'git log --oneline ${RELEASE_ID}' to investigate the issue${NC}"
+    echo -e "${YELLOW}Run 'git log --oneline ${DEPLOY_ID}' to investigate the issue${NC}"
     exit 1
 }
-
-# 备份当前版本函数
-backup_current_version() {
-    echo -e "${YELLOW}Creating backup of current version...${NC}"
-    if [ -d "${CURRENT_SYMLINK}" ]; then
-        BACKUP_NAME="${TIMESTAMP}-before-${DEPLOY_ID}"
-        tar -czf "${BACKUPS_DIR}/${BACKUP_NAME}.tar.gz" -C "${CURRENT_SYMLINK%/*}" . || {
-            echo -e "${YELLOW}✗ Warning: Backup creation failed but continuing deployment${NC}"
-        }
-    fi
-}
-
-# Install dependencies for the database check utility
-echo -e "${YELLOW}Installing utility dependencies...${NC}"
-npm install typeorm dotenv # and any other needed modules
 
 # 数据库连接检查函数
 check_db_connection() {
     echo -e "${YELLOW}Checking database connection...${NC}"
     
-    # 数据库连接验证脚本
     local DB_CHECK_SCRIPT="
         const { DataSource } = require('typeorm');
         const { config } = require('dotenv');
@@ -167,7 +150,6 @@ wait_for_app_health() {
     while [ $attempt -lt $max_attempts ] && [ "$healthy" != "true" ]; do
         ((attempt++))
         
-        # 尝试检查应用健康状态
         if curl -sf http://localhost:3000/health >/dev/null 2>&1; then
             healthy=true
             echo -e "${GREEN}✓ Application is healthy after $attempt attempts${NC}"
@@ -192,7 +174,6 @@ echo -e "${BLUE}================================================================
 echo -e "${GREEN}Starting deployment for ${PROJECT_NAME} at $(date)${NC}"
 echo -e "${BLUE}==================================================================${NC}"
 
-# 从命令行参数获取提交哈希作为部署标识
 if [ -z "$1" ]; then
     echo -e "${RED}Error: No commit hash provided. Aborting deployment.${NC}"
     exit 1
@@ -213,6 +194,11 @@ mkdir -p "${RELEASES_DIR}" "${BACKUPS_DIR}" "${LOGS_DIR}" || {
 # 记录部署开始时间
 DEPLOY_START_TIME=$(date +%s)
 
+# 在更新符号链接之前，保存当前版本的路径
+if [ -L "${CURRENT_SYMLINK}" ]; then
+    LAST_SUCCESSFUL_PATH=$(readlink "${CURRENT_SYMLINK}")
+fi
+
 # 1. 创建新的发布目录
 RELEASE_NAME="${TIMESTAMP}-${DEPLOY_ID}"
 RELEASE_PATH="${RELEASES_DIR}/${RELEASE_NAME}"
@@ -227,6 +213,7 @@ git archive --format=tar $1 | tar -xf - -C "${RELEASE_PATH}"
 # 3. 进入发布目录
 cd "${RELEASE_PATH}" || { 
     echo -e "${RED}Error: Failed to change directory to ${RELEASE_PATH}. Aborting.${NC}"
+    rollback_deployment
     exit 1
 }
 
@@ -235,10 +222,7 @@ if [ -f "${ENV_FILE}" ]; then
     cp "${ENV_FILE}" .env
     echo -e "${GREEN}.env file copied to ${RELEASE_PATH}/.env.${NC}"
     
-    # 加载环境变量用于后续操作
     source .env
-    
-    # 验证必要的环境变量
     validate_environment
 else
     echo -e "${RED}Warning: .env file not found at ${ENV_FILE}, some checks will be skipped${NC}"
@@ -254,7 +238,6 @@ npm install || {
 }
 
 # 6. 数据库连接检查
-# 仅在 .env 存在时执行检查
 [ -f "${ENV_FILE}" ] && check_db_connection || {
     echo -e "${YELLOW}⚠ Proceeding without database connection verification${NC}"
 }
@@ -286,10 +269,7 @@ echo -e "${YELLOW}Setting file permissions...${NC}"
 chown -R ${APP_USER}:${APP_GROUP} "${DEPLOY_ROOT}"
 chmod -R u=rwX,g=rX,o=rX "${DEPLOY_ROOT}"
 
-# 11. 重启应用前备份
-backup_current_version
-
-# 12. 重启服务
+# 11. 重启服务
 echo -e "${YELLOW}Restarting application via PM2...${NC}"
 pm2 restart "${ECOSYSTEM_CONFIG_FILE}" --env production --wait-ready 30 || {
     echo -e "${YELLOW}Starting new instance...${NC}"
@@ -301,14 +281,14 @@ pm2 restart "${ECOSYSTEM_CONFIG_FILE}" --env production --wait-ready 30 || {
     }
 }
 
-# 13. 部署后健康检查
+# 12. 部署后健康检查
 wait_for_app_health
 
-# 14. 清理旧版本
+# 13. 清理旧版本
 echo -e "${YELLOW}Cleaning old releases...${NC}"
 ls -t "${RELEASES_DIR}" | tail -n +6 | xargs -I {} rm -rf "${RELEASES_DIR}/{}"
 
-# 15. 记录部署完成信息
+# 14. 记录部署完成信息
 echo -e "${BLUE}==================================================================${NC}"
 echo -e "${GREEN}Deployment successful! New version is live.${NC}"
 echo -e "${GREEN}Deploy ID: ${DEPLOY_ID}${NC}"
