@@ -2,7 +2,7 @@
  * @Author: yzy
  * @Date: 2025-08-19 21:45:37
  * @LastEditors: yzy
- * @LastEditTime: 2025-08-28 10:27:15
+ * @LastEditTime: 2025-08-30 09:58:23
  */
 // src/app.module.ts
 import { Module } from '@nestjs/common';
@@ -21,6 +21,9 @@ import { PaymentsModule } from './modules/payments/payments.module';
 import { CategoriesModule } from './modules/categories/categories.module';
 import { CollaborationApplicationsModule } from './modules/collaboration-applications/collaboration-applications.module'; // 导入新模块
 import { LoggerModule } from './utils/logger.module';
+import { UsersModule } from './modules/users/users.module';
+import { RolesModule } from './modules/roles/roles.module';
+import { PermissionsModule } from './modules/permissions/permissions.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -43,6 +46,9 @@ import { LoggerModule } from './utils/logger.module';
     }),
     LoggerModule,
     AuthModule,
+    UsersModule,
+    RolesModule,
+    PermissionsModule,
     PaymentsModule,
     ProductsModule,
     BookingsModule,
