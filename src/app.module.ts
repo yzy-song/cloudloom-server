@@ -39,7 +39,7 @@ import { PermissionsModule } from './modules/permissions/permissions.module';
         password: configService.get<string>('DB_PASSWORD'),
         database: configService.get<string>('DB_DATABASE'),
         entities: [__dirname + '/core/entities/*.entity{.ts,.js}'],
-        synchronize: configService.get('NODE_ENV') === 'development', // 生产环境必须禁用
+        synchronize: configService.get('DB_SYNCHRONIZE') === 'true',
         migrationsRun: configService.get('NODE_ENV') !== 'development',
       }),
       inject: [ConfigService],
