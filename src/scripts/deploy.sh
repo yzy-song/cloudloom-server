@@ -27,8 +27,8 @@ APP_USER="cloudloom"
 APP_GROUP="cloudloom"
 
 # 超时设置
-DB_CHECK_TIMEOUT=10
-DEPLOY_TIMEOUT=300  # 整个部署过程的最大超时时间(秒)
+DB_CHECK_TIMEOUT=60
+DEPLOY_TIMEOUT=900  # 整个部署过程的最大超时时间(秒)
 MAX_RETRIES=3       # 最大重试次数
 
 # =========================================================================
@@ -287,7 +287,7 @@ backup_current_version
 
 # 12. 重启服务
 echo -e "${YELLOW}Restarting application via PM2...${NC}"
-pm2 restart "${ECOSYSTEM_CONFIG_FILE}" --env production --wait-wait-for-app 30 || {
+pm2 restart "${ECOSYSTEM_CONFIG_FILE}" --env production --wait-ready 30 || {
     echo -e "${YELLOW}Starting new instance...${NC}"
     pm2 start "${ECOSYSTEM_CONFIG_FILE}" --env production --wait-wait-for-app 30 || {
         echo -e "${RED}✗ Critical failure: Could not start application${NC}"
