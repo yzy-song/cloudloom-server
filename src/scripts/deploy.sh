@@ -250,6 +250,15 @@ npx nest build || {
     exit 1
 }
 
+# 7.5. 数据库结构迁移
+echo -e "${YELLOW}Running database migrations...${NC}"
+npx typeorm migration:run --dataSource data-source.ts || {
+    echo -e "${RED}✗ Failed to run migrations${NC}"
+    log_error "migration_failed"
+    rollback_deployment
+    exit 1
+}
+
 # 8. 更新符号链接
 echo -e "${YELLOW}Updating 'current' symlink...${NC}"
 ln -nfs "${RELEASE_PATH}/dist" "${CURRENT_SYMLINK}" || {
