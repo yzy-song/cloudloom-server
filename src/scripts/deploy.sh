@@ -289,7 +289,7 @@ backup_current_version
 echo -e "${YELLOW}Restarting application via PM2...${NC}"
 pm2 restart "${ECOSYSTEM_CONFIG_FILE}" --env production --wait-ready 30 || {
     echo -e "${YELLOW}Starting new instance...${NC}"
-    pm2 start "${ECOSYSTEM_CONFIG_FILE}" --env production --wait-wait-for-app 30 || {
+    pm2 start "${ECOSYSTEM_CONFIG_FILE}" --env production --wait-ready 30 || {
         echo -e "${RED}✗ Critical failure: Could not start application${NC}"
         log_error "pm2_restart_failed"
         rollback_deployment
