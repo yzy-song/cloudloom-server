@@ -87,8 +87,8 @@ rollback_deployment() {
     
     # 重启应用
     echo -e "${YELLOW}Restarting application after rollback...${NC}"
-    pm2 restart "${ECOSYSTEM_CONFIG_FILE}" --env production || {
-        echo -e "${RED}✗ Failed to restart application after rollback${NC}"
+    pm2 startOrReload "${ECOSYSTEM_CONFIG_FILE}" --env production --cwd "${DEPLOY_ROOT}" || {
+        echo -e "${RED}✗ Failed to startOrReload application after rollback${NC}"
         exit 1
     }
     
@@ -271,11 +271,11 @@ chmod -R u=rwX,g=rX,o=rX "${DEPLOY_ROOT}"
 # 11. 重启服务
 echo -e "${YELLOW}Restarting application via PM2...${NC}"
 # 修复了 PM2 启动命令，使用--cwd指定工作目录，确保PM2能找到配置文件
-pm2 restart "${ECOSYSTEM_CONFIG_FILE}" --env production --cwd "${DEPLOY_ROOT}" --wait-ready 30 || {
+pm2 startOrReload "${ECOSYSTEM_CONFIG_FILE}" --env production --cwd "${DEPLOY_ROOT}" --wait-ready 30 || {
     echo -e "${YELLOW}Starting new instance...${NC}"
-    pm2 start "${ECOSYSTEM_CONFIG_FILE}" --env production --cwd "${DEPLOY_ROOT}" --wait-ready 30 || {
-        echo -e "${RED}✗ Critical failure: Could not start application${NC}"
-        log_error "pm2_restart_failed"
+    pm2 startOrReload "${ECOSYSTEM_CONFIG_FILE}" --env production --cwd "${DEPLOY_ROOT}" --wait-ready 30 || {
+        echo -e "${RED}✗ Critical failure: Could not startOrReload application${NC}"
+        log_error "pm2_startOrReload_failed"
         rollback_deployment
         exit 1
     }

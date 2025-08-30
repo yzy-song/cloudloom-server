@@ -3,7 +3,7 @@
  # @Author: yzy
  # @Date: 2025-08-29 22:53:34
  # @LastEditors: yzy
- # @LastEditTime: 2025-08-30 09:22:36
+ # @LastEditTime: 2025-08-30 09:49:05
 ###
 # 任何命令失败时立即退出
 set -e
@@ -66,8 +66,8 @@ perform_rollback() {
     # 重启服务
     log "${YELLOW}Restarting application...${NC}"
     # 修复：添加 --cwd 参数
-    pm2 restart "${ECOSYSTEM_CONFIG_FILE}" --env production --cwd "${DEPLOY_ROOT}" || {
-        log "${RED}✗ Failed to restart PM2${NC}"
+    pm2 startOrReload "${ECOSYSTEM_CONFIG_FILE}" --env production --cwd "${DEPLOY_ROOT}" || {
+        log "${RED}✗ Failed to startOrReload PM2${NC}"
         exit 1
     }
 }
