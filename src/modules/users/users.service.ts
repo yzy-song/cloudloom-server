@@ -1,3 +1,9 @@
+/*
+ * @Author: yzy
+ * @Date: 2025-08-29 23:40:10
+ * @LastEditors: yzy
+ * @LastEditTime: 2025-08-30 08:24:26
+ */
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from '../../core/entities/user.entity';
@@ -36,7 +42,7 @@ export class UsersService {
   }
 
   async remove(id: string) {
-    this.logger.log(`Removing user from database : ${id}`);
+    this.logger.log(`Removing user from database with id: ${id}`);
     return this.userRepo.delete(id);
   }
 }
