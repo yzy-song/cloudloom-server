@@ -3,7 +3,7 @@
  # @Author: yzy
  # @Date: 2025-08-29 22:53:34
  # @LastEditors: yzy
- # @LastEditTime: 2025-08-30 08:31:11
+ # @LastEditTime: 2025-08-30 09:23:33
 ###
 # 任何命令失败时立即退出
 set -e
@@ -53,19 +53,6 @@ if [ ! -d "$TARGET_PATH" ]; then
     exit 1
 fi
 
-# 备份当前版本
-backup_current() {
-    log "${YELLOW}Backing up current version...${NC}"
-    BACKUP_NAME="before-rollback-$TIMESTAMP"
-    if [ -d "$CURRENT_SYMLINK" ]; then
-        tar -czf "$BACKUPS_DIR/$BACKUP_NAME.tar.gz" -C "$CURRENT_SYMLINK" . || {
-            log "${YELLOW}⚠ Backup failed, continuing rollback...${NC}"
-        }
-    else
-        log "${YELLOW}No current version symlink found. Skipping backup.${NC}"
-    fi
-}
-
 # 执行回滚
 perform_rollback() {
     log "${YELLOW}Rolling back to version: $TARGET_VERSION${NC}"
@@ -78,7 +65,8 @@ perform_rollback() {
     
     # 重启服务
     log "${YELLOW}Restarting application...${NC}"
-    pm2 restart "${ECOSYSTEM_CONFIG_FILE}" --env production || {
+    # 修复：添加 --cwd 参数
+    pm2 restart "${ECOSYSTEM_CONFIG_FILE}" --env production --cwd "${DEPLOY_ROOT}" || {
         log "${RED}✗ Failed to restart PM2${NC}"
         exit 1
     }
@@ -87,14 +75,17 @@ perform_rollback() {
 # 清理旧备份
 cleanup_backups() {
     log "${YELLOW}Cleaning old backups...${NC}"
-    ls -t "$BACKUPS_DIR" | tail -n +6 | xargs -I {} rm -rf "$BACKUPS_DIR/{}"
+    # 修复：移除对不存在的.tar.gz备份的清理
+    # 仅清理旧的 release 目录
+    ls -t "${RELEASES_DIR}" | tail -n +6 | xargs -I {} rm -rf "${RELEASES_DIR}/{}"
 }
 
 # 主流程
 main() {
     log "Starting rollback process"
-    backup_current
     perform_rollback
+    # 你可能不需要在回滚时清理旧版本，但为了完整性，这里保留了
+    # 如果你觉得不需要，可以删除 `cleanup_backups` 这行
     cleanup_backups
     log "Rollback completed successfully"
     echo -e "${GREEN}✓ Rollback to $TARGET_VERSION succeeded!${NC}"

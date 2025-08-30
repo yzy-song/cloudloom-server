@@ -87,7 +87,6 @@ rollback_deployment() {
     
     # 重启应用
     echo -e "${YELLOW}Restarting application after rollback...${NC}"
-    # PM2 配置文件路径已经传递，解决了之前的问题
     pm2 restart "${ECOSYSTEM_CONFIG_FILE}" --env production || {
         echo -e "${RED}✗ Failed to restart application after rollback${NC}"
         exit 1
@@ -271,9 +270,10 @@ chmod -R u=rwX,g=rX,o=rX "${DEPLOY_ROOT}"
 
 # 11. 重启服务
 echo -e "${YELLOW}Restarting application via PM2...${NC}"
-pm2 restart "${ECOSYSTEM_CONFIG_FILE}" --env production --wait-ready 30 || {
+# 修复了 PM2 启动命令，使用--cwd指定工作目录，确保PM2能找到配置文件
+pm2 restart "${ECOSYSTEM_CONFIG_FILE}" --env production --cwd "${DEPLOY_ROOT}" --wait-ready 30 || {
     echo -e "${YELLOW}Starting new instance...${NC}"
-    pm2 start "${ECOSYSTEM_CONFIG_FILE}" --env production --wait-ready 30 || {
+    pm2 start "${ECOSYSTEM_CONFIG_FILE}" --env production --cwd "${DEPLOY_ROOT}" --wait-ready 30 || {
         echo -e "${RED}✗ Critical failure: Could not start application${NC}"
         log_error "pm2_restart_failed"
         rollback_deployment

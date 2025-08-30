@@ -1,0 +1,12 @@
+#!/bin/bash
+
+# Read the old hash, new hash, and refname from standard input
+while read oldrev newrev refname
+do
+    # Only run the deployment for pushes to the 'main' branch
+    if [ "$refname" = "refs/heads/main" ]; then
+        # Call the deploy.sh script and pass the new commit hash as an argument
+        echo "Push received on 'main' branch. Starting deployment..."
+        /var/www/cloudloom-server/deploy.sh $newrev
+    fi
+done
