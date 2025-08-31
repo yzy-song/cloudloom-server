@@ -9,8 +9,8 @@ module.exports = {
     name: 'cloudloom-server',
     script: './current/main.js',
     user: "cloudloom",
-    instances: 'max',
-    exec_mode: 'cluster',
+    instances: 1,
+    exec_mode: 'fork',
     env: {
       NODE_ENV: 'production',
     },
