@@ -21,7 +21,6 @@ RELEASES_DIR="${DEPLOY_ROOT}/releases"
 CURRENT_SYMLINK="${DEPLOY_ROOT}/current"
 ENV_FILE="${DEPLOY_ROOT}/.env"
 ECOSYSTEM_CONFIG_FILE="${DEPLOY_ROOT}/ecosystem.config.js"
-BACKUPS_DIR="${DEPLOY_ROOT}/backups"
 LOGS_DIR="${DEPLOY_ROOT}/logs"
 APP_USER="cloudloom"
 APP_GROUP="cloudloom"
@@ -185,7 +184,7 @@ sudo chown -R $(whoami):$(whoami) /var/www/cloudloom-server/repo.git || true
 git config --global --add safe.directory /var/www/cloudloom-server/repo.git || true
 
 # 创建必要的目录结构
-mkdir -p "${RELEASES_DIR}" "${BACKUPS_DIR}" "${LOGS_DIR}" || {
+mkdir -p "${RELEASES_DIR}" "${LOGS_DIR}" || {
     echo -e "${RED}Error: Failed to create required directories. Aborting deployment.${NC}"
     exit 1
 }
