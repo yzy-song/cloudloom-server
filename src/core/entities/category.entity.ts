@@ -1,9 +1,9 @@
 /*
- * 产品分类实体
+ * 产品分类实体 (大类)
  */
 import { Entity, PrimaryGeneratedColumn, Column, OneToMany, CreateDateColumn, UpdateDateColumn } from 'typeorm';
-import { Product } from './product.entity';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Subcategory } from './subcategory.entity'; // 引入新的 Subcategory 实体
 
 @Entity('categories')
 export class Category {
@@ -32,7 +32,7 @@ export class Category {
   @Column({ name: 'image_url', type: 'text', nullable: true })
   imageUrl: string;
 
-  @ApiPropertyOptional({ description: '该分类下的产品列表', type: () => [Product] })
-  @OneToMany(() => Product, product => product.category)
-  products: Product[];
+  @ApiPropertyOptional({ description: '该大类下的子分类列表', type: () => [Subcategory] })
+  @OneToMany(() => Subcategory, subcategory => subcategory.category)
+  subcategories: Subcategory[];
 }

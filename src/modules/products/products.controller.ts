@@ -27,12 +27,12 @@ export class ProductsController {
   @ApiOperation({ summary: '商品列表', description: '支持分页、分类、上下架、标签筛选' })
   @ApiQuery({ name: 'page', required: false, description: '页码', example: 1 })
   @ApiQuery({ name: 'limit', required: false, description: '每页数量', example: 10 })
-  @ApiQuery({ name: 'categoryId', required: false, description: '分类ID', example: 2 })
+  @ApiQuery({ name: 'subcategoryId', required: false, description: '子分类ID', example: 2 })
   @ApiQuery({ name: 'isActive', required: false, description: '是否上架', example: true })
   @ApiQuery({ name: 'tags', required: false, description: '标签，逗号分隔', example: '女装,古风' })
   @ApiResponse({ status: 200, description: '商品列表', type: [Product] })
-  findAll(@Query('page', ParseIntPipe) page: number = 1, @Query('limit', ParseIntPipe) limit: number = 10, @Query('categoryId') categoryId?: number, @Query('isActive') isActive?: boolean, @Query('tags') tags?: string) {
-    return this.productsService.findAll({ page, limit, categoryId, isActive, tags });
+  findAll(@Query('page', ParseIntPipe) page: number = 1, @Query('limit', ParseIntPipe) limit: number = 10, @Query('subcategoryId') subcategoryId?: number, @Query('isActive') isActive?: boolean, @Query('tags') tags?: string) {
+    return this.productsService.findAll({ page, limit, subcategoryId, isActive, tags });
   }
 
   @Get(':id')

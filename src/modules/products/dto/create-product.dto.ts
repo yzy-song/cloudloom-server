@@ -73,7 +73,7 @@ export class CreateProductDto {
   careInstructions?: string;
 
   @IsNumber()
-  categoryId: number;
+  subcategoryId: number;
 
   @IsBoolean()
   @IsOptional()

@@ -2,7 +2,7 @@
  * 产品实体，包含商品的详细信息
  */
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
-import { Category } from './category.entity';
+import { Subcategory } from './subcategory.entity';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 @Entity('products')
@@ -67,6 +67,10 @@ export class Product {
   @Column({ type: 'text', name: 'care_instructions', nullable: true })
   careInstructions: string;
 
+  @ApiProperty({ description: '性别', example: 'female' })
+  @Column({ type: 'varchar', length: 20, name: 'gender' })
+  gender: string;
+
   @ApiProperty({ description: '评论数', example: 12 })
   @Column({ type: 'integer', default: 0 })
   reviews: number;
@@ -83,12 +87,12 @@ export class Product {
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
 
-  @ApiPropertyOptional({ description: '所属分类', type: () => Category })
-  @ManyToOne(() => Category, category => category.products, { onDelete: 'SET NULL' })
-  @JoinColumn({ name: 'category_id' })
-  category: Category;
+  @ApiPropertyOptional({ description: '所属子分类', type: () => Subcategory })
+  @ManyToOne(() => Subcategory, subcategory => subcategory.products, { onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'subcategory_id' })
+  subcategory: Subcategory;
 
-  @ApiPropertyOptional({ description: '分类ID', example: 2 })
-  @Column({ name: 'category_id', nullable: true })
-  categoryId: number;
+  @ApiPropertyOptional({ description: '子分类ID', example: 2 })
+  @Column({ name: 'subcategory_id', nullable: false })
+  subcategoryId: number;
 }

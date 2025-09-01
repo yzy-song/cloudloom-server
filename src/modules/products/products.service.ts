@@ -11,11 +11,11 @@ import { Product } from '../../core/entities/product.entity';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { AppLogger } from '../../utils/logger';
-import { Category } from 'src/core/entities/category.entity';
+import { Subcategory } from 'src/core/entities/subcategory.entity';
 export interface FindAllProductsParams {
   page?: number;
   limit?: number;
-  categoryId?: number;
+  subcategoryId?: number;
   isActive?: boolean;
   tags?: string;
 }
@@ -26,50 +26,45 @@ export class ProductsService {
     @InjectRepository(Product)
     private readonly productRepository: Repository<Product>,
 
-    @InjectRepository(Category)
-    private readonly categoryRepository: Repository<Category>,
+    @InjectRepository(Subcategory)
+    private readonly subcategoryRepository: Repository<Subcategory>,
 
     private readonly logger: AppLogger // 依赖注入
   ) {}
 
   async create(createProductDto: CreateProductDto): Promise<Product> {
-    // 验证分类是否存在
-    const category = await this.categoryRepository.findOne({
-      where: { id: createProductDto.categoryId },
+    // 验证子分类是否存在
+    const subcategory = await this.subcategoryRepository.findOne({
+      where: { id: createProductDto.subcategoryId },
     });
-
-    if (!category) {
-      throw new NotFoundException(`分类ID ${createProductDto.categoryId} 不存在`);
+    if (!subcategory) {
+      throw new NotFoundException(`子分类ID ${createProductDto.subcategoryId} 不存在`);
     }
     const product = this.productRepository.create(createProductDto);
     return await this.productRepository.save(product);
   }
 
   async findAll(params: FindAllProductsParams) {
-    const { page = 1, limit = 10, categoryId, isActive, tags } = params;
+    const { page = 1, limit = 10, subcategoryId, isActive, tags } = params;
     const skip = (page - 1) * limit;
     const where: any = {};
 
-    if (categoryId !== undefined) {
-      where.categoryId = categoryId;
+    if (subcategoryId !== undefined) {
+      where.subcategoryId = subcategoryId;
     }
-
     if (isActive !== undefined) {
       where.isActive = isActive;
     }
-
     if (tags) {
       where.tags = In(tags.split(','));
     }
-
     const [data, total] = await this.productRepository.findAndCount({
       where,
-      relations: ['category'],
+      relations: ['subcategory'],
       skip,
       take: limit,
       order: { createdAt: 'DESC' },
     });
-
     this.logger.log(`Fetched products - total: ${total}`);
     return { data, total };
   }
@@ -77,7 +72,7 @@ export class ProductsService {
   async findOne(id: number): Promise<{ data: Product; message: string }> {
     const product = await this.productRepository.findOne({
       where: { id },
-      relations: ['category'],
+      relations: ['subcategory'],
     });
 
     if (!product) {
@@ -128,7 +123,7 @@ export class ProductsService {
     if (!product) return { data: [], message: 'Product not found' };
     const relatedProducts = await this.productRepository.find({
       where: {
-        categoryId: product.categoryId,
+        subcategoryId: product.subcategoryId,
         id: Not(id), // 排除自身
       },
       take: limit, // 返回指定数量的相关产品
