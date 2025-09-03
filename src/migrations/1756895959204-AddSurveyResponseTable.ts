@@ -13,9 +13,6 @@ export class AddSurveyResponseTable1756895959204 implements MigrationInterface {
     await queryRunner.query(
       `CREATE TABLE "surveys" ("id" character varying(255) NOT NULL, "title" character varying(255) NOT NULL, "description" text, "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), CONSTRAINT "PK_1b5e3d4aaeb2321ffa98498c971" PRIMARY KEY ("id"))`
     );
-    await queryRunner.query(`ALTER TABLE "users" ADD "description" text`);
-    await queryRunner.query(`ALTER TABLE "products" ALTER COLUMN "gender" DROP DEFAULT`);
-    await queryRunner.query(`ALTER TABLE "products" ALTER COLUMN "subcategory_id" SET NOT NULL`);
     await queryRunner.query(`COMMENT ON COLUMN "products"."subcategory_id" IS NULL`);
     await queryRunner.query(`COMMENT ON COLUMN "subcategories"."name" IS NULL`);
     await queryRunner.query(`COMMENT ON COLUMN "subcategories"."description" IS NULL`);
