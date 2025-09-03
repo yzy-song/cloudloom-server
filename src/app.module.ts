@@ -60,7 +60,6 @@ import { SurveyModule } from './modules/survey/survey.module';
     SurveyModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
   providers: [
     AppService,
     {
