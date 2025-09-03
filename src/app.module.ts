@@ -13,17 +13,9 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { ProductsModule } from './modules/products/products.module';
-import { BookingsModule } from './modules/bookings/bookings.module';
-import { NotificationsModule } from './modules/notifications/notifications.module';
-import { AuthModule } from './modules/auth/auth.module';
-import { PaymentsModule } from './modules/payments/payments.module';
-import { CategoriesModule } from './modules/categories/categories.module';
-import { CollaborationApplicationsModule } from './modules/collaboration-applications/collaboration-applications.module'; // 导入新模块
 import { LoggerModule } from './utils/logger.module';
-import { UsersModule } from './modules/users/users.module';
-import { RolesModule } from './modules/roles/roles.module';
-import { PermissionsModule } from './modules/permissions/permissions.module';
+import { SurveyModule } from './modules/survey/survey.module';
+
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -45,18 +37,15 @@ import { PermissionsModule } from './modules/permissions/permissions.module';
       inject: [ConfigService],
     }),
     LoggerModule,
-    AuthModule,
-    UsersModule,
-    RolesModule,
-    PermissionsModule,
-    PaymentsModule,
-    ProductsModule,
-    BookingsModule,
-    NotificationsModule,
-    CategoriesModule,
-    CollaborationApplicationsModule, // 添加新模块
+    SurveyModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_FILTER,
+      useClass: AllExceptionsFilter,
+    },
+  ],
 })
 export class AppModule {}
