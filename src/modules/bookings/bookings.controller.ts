@@ -1,5 +1,6 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, Query, ParseIntPipe, HttpCode, HttpStatus } from '@nestjs/common';
 import { BookingsService } from './bookings.service';
+import { AppLogger } from '../../utils/logger';
 import { CreateBookingDto, UpdateBookingDto } from './dto/create-booking.dto';
 import { BookingQueryDto } from './dto/booking-query.dto';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
@@ -8,7 +9,12 @@ import { Booking } from '../../core/entities/booking.entity';
 @ApiTags('bookings')
 @Controller('bookings')
 export class BookingsController {
-  constructor(private readonly bookingsService: BookingsService) {}
+  constructor(
+    private readonly bookingsService: BookingsService,
+    private readonly logger: AppLogger
+  ) {
+    this.logger.setContext(BookingsController.name);
+  }
 
   // 创建预约
   @Post()
@@ -31,12 +37,14 @@ export class BookingsController {
     description: '库存不足或时间段冲突',
   })
   async create(@Body() createBookingDto: CreateBookingDto) {
+    this.logger.log('POST /bookings 创建预约', { createBookingDto });
     return await this.bookingsService.create(createBookingDto);
   }
 
   // 取消预约（软删除/状态变更）
   @Patch(':id/cancel')
   async cancel(@Param('id') id: string) {
+    this.logger.log(`PATCH /bookings/${id}/cancel 取消预约`);
     return this.bookingsService.cancel(id);
   }
 
@@ -58,6 +66,7 @@ export class BookingsController {
     type: [Booking],
   })
   findAll(@Query() query: BookingQueryDto) {
+    this.logger.log('GET /bookings 查询预约列表', query);
     return this.bookingsService.findAll(query);
   }
 
@@ -70,6 +79,7 @@ export class BookingsController {
     type: [Booking],
   })
   search(@Query() query: BookingQueryDto) {
+    this.logger.log('GET /bookings/search 高级搜索预约', query);
     return this.bookingsService.searchBookings(query);
   }
 
@@ -88,6 +98,7 @@ export class BookingsController {
     description: '产品未找到',
   })
   getAvailableTimeSlots(@Param('productId', ParseIntPipe) productId: number, @Param('date') date: string) {
+    this.logger.log(`GET /bookings/${productId}/available-slots/${date} 获取可用时间段`);
     return this.bookingsService.getAvailableTimeSlots(productId, date);
   }
 
@@ -101,6 +112,7 @@ export class BookingsController {
     type: [Booking],
   })
   getDailyBookings(@Param('date') date: string) {
+    this.logger.log(`GET /bookings/date/${date} 获取某天的所有预约`);
     return this.bookingsService.getDailyBookings(date);
   }
 
@@ -115,6 +127,7 @@ export class BookingsController {
     type: [Booking],
   })
   getProductDailyBookings(@Param('productId', ParseIntPipe) productId: number, @Param('date') date: string) {
+    this.logger.log(`GET /bookings/product/${productId}/date/${date} 获取某产品某天的所有预约`);
     return this.bookingsService.getProductDailyBookings(productId, date);
   }
 
@@ -136,6 +149,7 @@ export class BookingsController {
     },
   })
   getBookingStats() {
+    this.logger.log('GET /bookings/stats 获取预约统计');
     return this.bookingsService.getBookingStats();
   }
 
@@ -153,6 +167,7 @@ export class BookingsController {
     description: '预约未找到',
   })
   async getBookingDetail(@Param('bookingNumber') bookingNumber: string) {
+    this.logger.log(`GET /bookings/${bookingNumber} 获取预约详情`);
     return this.bookingsService.findByBookingNumber(bookingNumber);
   }
 
@@ -174,6 +189,7 @@ export class BookingsController {
     description: '请求参数错误',
   })
   update(@Param('bookingNumber') bookingNumber: string, @Body() updateBookingDto: UpdateBookingDto) {
+    this.logger.log(`PATCH /bookings/${bookingNumber} 更新预约`, { updateBookingDto });
     return this.bookingsService.update(bookingNumber, updateBookingDto);
   }
 
@@ -194,6 +210,7 @@ export class BookingsController {
     },
   })
   async softDelete(@Param('bookingNumber') bookingNumber: string) {
+    this.logger.log(`PATCH /bookings/${bookingNumber}/delete 软删除预约`);
     return this.bookingsService.remove(bookingNumber);
   }
 }

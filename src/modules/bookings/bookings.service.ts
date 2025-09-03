@@ -58,115 +58,128 @@ export class BookingsService {
   }
 
   async findByBookingNumber(bookingNumber: string): Promise<Booking> {
+    this.logger.log(`查询预约详情 bookingNumber=${bookingNumber}`);
     const booking = await this.bookingsRepository.findOne({
       where: { bookingNumber },
     });
 
     if (!booking) {
+      this.logger.error('预约详情未找到', undefined, { bookingNumber });
       throw new NotFoundException('预约不存在');
     }
 
+    this.logger.log('预约详情获取成功', { bookingNumber });
     return booking;
   }
 
   async create(createBookingDto: CreateBookingDto): Promise<{ code: number; message: string; data: Booking & { client_secret: string } }> {
-    // 生成预约号
+    this.logger.log('创建预约', { createBookingDto });
     const bookingNumber = await this.generateBookingNumber();
 
-    // 验证逻辑
     if (createBookingDto.bookingType === 'standard' && !createBookingDto.productId) {
+      this.logger.error('创建预约失败，标准预约缺少产品', undefined, { createBookingDto });
       throw new BadRequestException('标准预约需要选择产品');
     }
 
     if (createBookingDto.bookingType === 'time_slot_only') {
-      // 时段预留时清空productId
       createBookingDto.productId = undefined;
     }
 
     const bookingData = {
       ...createBookingDto,
       bookingNumber,
-
       bookingType: createBookingDto.bookingType as Booking['bookingType'],
     };
 
     const booking = this.bookingsRepository.create(bookingData);
-    const saved = await this.bookingsRepository.save(booking);
-
-    const paymentResult = await this.paymentsService.createPayment({
-      amount: Math.round(saved.totalAmount * 100),
-      currency: 'usd',
-      description: `预约号：${saved.bookingNumber}`,
-    });
-
-    return {
-      code: 0,
-      message: '预约成功',
-      data: {
-        ...saved,
-        client_secret: paymentResult.client_secret ?? '',
-      },
-    };
+    try {
+      const saved = await this.bookingsRepository.save(booking);
+      this.logger.log('预约创建成功', { bookingNumber: saved.bookingNumber });
+      const paymentResult = await this.paymentsService.createPayment({
+        amount: Math.round(saved.totalAmount * 100),
+        currency: 'usd',
+        description: `预约号：${saved.bookingNumber}`,
+      });
+      return {
+        code: 0,
+        message: '预约成功',
+        data: {
+          ...saved,
+          client_secret: paymentResult.client_secret ?? '',
+        },
+      };
+    } catch (error) {
+      this.logger.error('预约创建失败', error?.stack, { createBookingDto });
+      throw error;
+    }
   }
 
   async remove(bookingNumber: string): Promise<{ message: string; bookingNumber: string }> {
+    this.logger.log(`软删除预约 bookingNumber=${bookingNumber}`);
     const booking = await this.bookingsRepository.findOne({
       where: { bookingNumber },
     });
 
     if (!booking) {
+      this.logger.error('软删除预约失败，未找到', undefined, { bookingNumber });
       throw new NotFoundException(`预约号 ${bookingNumber} 未找到`);
     }
-
-    // 软删除：更新状态为 deleted
 
     booking.status = 'deleted';
     booking.deletedAt = new Date();
 
-    await this.bookingsRepository.save(booking);
-
-    this.logger.log(`预约 ${bookingNumber} 已软删除`);
-
-    return {
-      message: '预约已成功删除',
-      bookingNumber: bookingNumber,
-    };
+    try {
+      await this.bookingsRepository.save(booking);
+      this.logger.log('预约软删除成功', { bookingNumber });
+      return {
+        message: '预约已成功删除',
+        bookingNumber: bookingNumber,
+      };
+    } catch (error) {
+      this.logger.error('预约软删除失败', error?.stack, { bookingNumber });
+      throw error;
+    }
   }
   async cancel(bookingNumber: string): Promise<Booking> {
+    this.logger.log(`取消预约 bookingNumber=${bookingNumber}`);
     const booking = await this.bookingsRepository.findOne({
       where: { bookingNumber },
     });
 
     if (!booking) {
+      this.logger.error('取消预约失败，未找到', undefined, { bookingNumber });
       throw new NotFoundException(`预约号 ${bookingNumber} 未找到`);
     }
 
-    // 业务规则：只有特定状态可以取消
     if (!['pending', 'confirmed'].includes(booking.status)) {
+      this.logger.error('取消预约失败，状态不允许', undefined, { bookingNumber, status: booking.status });
       throw new BadRequestException('当前状态无法取消预约');
     }
 
     booking.status = 'cancelled';
     booking.cancelledAt = new Date();
 
-    return await this.bookingsRepository.save(booking);
+    try {
+      const saved = await this.bookingsRepository.save(booking);
+      this.logger.log('预约取消成功', { bookingNumber });
+      return saved;
+    } catch (error) {
+      this.logger.error('预约取消失败', error?.stack, { bookingNumber });
+      throw error;
+    }
   }
 
   async findAll(query: BookingQueryDto): Promise<{ data: Booking[]; count: number; page: number; limit: number }> {
+    this.logger.log('查询预约列表', query);
     const { page = 1, limit = 10, status, startDate, endDate, customerName, customerEmail, bookingType, order = 'DESC' } = query;
-
     const skip = (page - 1) * limit;
-
     const queryBuilder = this.bookingsRepository.createQueryBuilder('booking');
-    // 添加筛选条件
     if (status) {
       queryBuilder.andWhere('booking.status = :status', { status });
     }
-
     if (bookingType) {
       queryBuilder.andWhere('booking.bookingType = :bookingType', { bookingType });
     }
-
     if (startDate && endDate) {
       queryBuilder.andWhere('booking.bookingDate BETWEEN :startDate AND :endDate', {
         startDate,
@@ -177,67 +190,60 @@ export class BookingsService {
     } else if (endDate) {
       queryBuilder.andWhere('booking.bookingDate <= :endDate', { endDate });
     }
-
     if (customerName) {
       queryBuilder.andWhere('booking.customerFullname ILIKE :customerName', {
         customerName: `%${customerName}%`,
       });
     }
-
     if (customerEmail) {
       queryBuilder.andWhere('booking.customerEmail ILIKE :customerEmail', {
         customerEmail: `%${customerEmail}%`,
       });
     }
-
-    // 过滤已删除的记录
     queryBuilder.andWhere('booking.status != :deletedStatus', { deletedStatus: 'deleted' });
-
-    // 排序
     queryBuilder.orderBy('booking.createdAt', order);
-
-    // 获取总数
-    const total = await queryBuilder.getCount();
-
-    // 添加分页
-    queryBuilder.skip(skip).take(limit);
-
-    const data = await queryBuilder.getMany();
-
-    return {
-      data,
-      count: total,
-      page,
-      limit,
-    };
+    try {
+      const total = await queryBuilder.getCount();
+      queryBuilder.skip(skip).take(limit);
+      const data = await queryBuilder.getMany();
+      this.logger.log('预约列表获取成功', { total });
+      return {
+        data,
+        count: total,
+        page,
+        limit,
+      };
+    } catch (error) {
+      this.logger.error('预约列表获取失败', error?.stack, query);
+      throw error;
+    }
   }
 
   async findOne(bookingNumber: string): Promise<Booking> {
+    this.logger.log(`查询预约 bookingNumber=${bookingNumber}`);
     const booking = await this.bookingsRepository.findOne({
       where: { bookingNumber },
     });
 
     if (!booking) {
+      this.logger.error('预约未找到', undefined, { bookingNumber });
       throw new NotFoundException(`预约号 #${bookingNumber} 未找到`);
     }
 
+    this.logger.log('预约获取成功', { bookingNumber });
     return booking;
   }
 
   async searchBookings(query: BookingQueryDto): Promise<{ data: Booking[]; count: number }> {
+    this.logger.log('高级搜索预约', query);
     const { status, startDate, endDate, customerName, customerEmail, bookingType } = query;
-
     const queryBuilder = this.bookingsRepository.createQueryBuilder('booking');
-
-    // 添加筛选条件（修复：使用 andWhere 而不是 if 条件）
     if (status) {
       queryBuilder.andWhere('booking.status = :status', { status });
     }
-
     if (bookingType) {
       queryBuilder.andWhere('booking.bookingType = :bookingType', { bookingType });
     }
-
     if (startDate && endDate) {
       queryBuilder.andWhere('booking.bookingDate BETWEEN :startDate AND :endDate', {
         startDate,
@@ -248,42 +254,43 @@ export class BookingsService {
     } else if (endDate) {
       queryBuilder.andWhere('booking.bookingDate <= :endDate', { endDate });
     }
-
     if (customerName) {
       queryBuilder.andWhere('booking.customerFullname ILIKE :customerName', {
         customerName: `%${customerName}%`,
       });
     }
-
     if (customerEmail) {
       queryBuilder.andWhere('booking.customerEmail ILIKE :customerEmail', {
         customerEmail: `%${customerEmail}%`,
       });
     }
-
-    // 过滤已删除的记录
     queryBuilder.andWhere('booking.status != :deletedStatus', { deletedStatus: 'deleted' });
-
-    const [data, count] = await queryBuilder.getManyAndCount();
-
-    return { data, count };
+    try {
+      const [data, count] = await queryBuilder.getManyAndCount();
+      this.logger.log('高级搜索预约成功', { count });
+      return { data, count };
+    } catch (error) {
+      this.logger.error('高级搜索预约失败', error?.stack, query);
+      throw error;
+    }
   }
 
   async update(bookingNumber: string, updateBookingDto: UpdateBookingDto): Promise<Booking> {
+    this.logger.log(`更新预约 bookingNumber=${bookingNumber}`, { updateBookingDto });
     const booking = await this.bookingsRepository.findOne({
       where: { bookingNumber },
     });
 
     if (!booking) {
+      this.logger.error('更新预约失败，未找到', undefined, { bookingNumber });
       throw new NotFoundException(`预约号 ${bookingNumber} 未找到`);
     }
 
-    // 业务规则：已取消或完成的预约不能修改
     if (['cancelled', 'completed', 'no_show'].includes(booking.status)) {
+      this.logger.error('更新预约失败，状态不允许', undefined, { bookingNumber, status: booking.status });
       throw new BadRequestException('当前状态的预约无法修改');
     }
 
-    // 更新允许修改的字段
     if (updateBookingDto.customerFullname !== undefined) {
       booking.customerFullname = updateBookingDto.customerFullname;
     }
@@ -315,57 +322,79 @@ export class BookingsService {
       booking.emergencyContact = updateBookingDto.emergencyContact;
     }
     if (updateBookingDto.status !== undefined) {
-      // 状态变更需要特殊处理
       booking.status = updateBookingDto.status;
     }
-
-    // 自动更新更新时间
     booking.updatedAt = new Date();
-
-    return await this.bookingsRepository.save(booking);
+    try {
+      const saved = await this.bookingsRepository.save(booking);
+      this.logger.log('预约更新成功', { bookingNumber });
+      return saved;
+    } catch (error) {
+      this.logger.error('预约更新失败', error?.stack, { bookingNumber, updateBookingDto });
+      throw error;
+    }
   }
 
   async getAvailableTimeSlots(productId: number, date: string): Promise<string[]> {
+    this.logger.log(`查询可用时间段 productId=${productId}, date=${date}`);
     const allTimeSlots = ['10:00 - 11:30', '11:30 - 13:00', '13:00 - 14:30', '14:30 - 16:00', '16:00 - 17:30'];
-
-    // 获取该产品在指定日期已被预约的时间段
-    const bookedSlots = await this.bookingsRepository
-      .createQueryBuilder('booking')
-      .select('booking.timeSlot')
-      .where('booking.productId = :productId', { productId })
-      .andWhere('booking.bookingDate = :date', { date }) // 这里直接用字符串
-      .andWhere('booking.status IN (:...statuses)', {
-        statuses: ['pending', 'confirmed'],
-      })
-      .getMany();
-
-    const bookedSlotValues = bookedSlots.map(slot => slot.timeSlot); // 注意这里是 timeSlot
-
-    // 返回可用的时间段
-    return allTimeSlots.filter(slot => !bookedSlotValues.includes(slot));
+    try {
+      const bookedSlots = await this.bookingsRepository
+        .createQueryBuilder('booking')
+        .select('booking.timeSlot')
+        .where('booking.productId = :productId', { productId })
+        .andWhere('booking.bookingDate = :date', { date })
+        .andWhere('booking.status IN (:...statuses)', {
+          statuses: ['pending', 'confirmed'],
+        })
+        .getMany();
+      const bookedSlotValues = bookedSlots.map(slot => slot.timeSlot);
+      const available = allTimeSlots.filter(slot => !bookedSlotValues.includes(slot));
+      this.logger.log('可用时间段查询成功', { productId, date, available });
+      return available;
+    } catch (error) {
+      this.logger.error('可用时间段查询失败', error?.stack, { productId, date });
+      throw error;
+    }
   }
 
   async getDailyBookings(date: string): Promise<Booking[]> {
-    return this.bookingsRepository
-      .createQueryBuilder('booking')
-      .where('booking.bookingDate = :date', { date })
-      .andWhere('booking.status NOT IN (:...excludedStatuses)', {
-        excludedStatuses: ['cancelled', 'no_show', 'deleted'],
-      })
-      .orderBy('booking.bookingTime', 'ASC')
-      .getMany();
+    this.logger.log(`查询某天所有预约 date=${date}`);
+    try {
+      const bookings = await this.bookingsRepository
+        .createQueryBuilder('booking')
+        .where('booking.bookingDate = :date', { date })
+        .andWhere('booking.status NOT IN (:...excludedStatuses)', {
+          excludedStatuses: ['cancelled', 'no_show', 'deleted'],
+        })
+        .orderBy('booking.bookingTime', 'ASC')
+        .getMany();
+      this.logger.log('某天所有预约查询成功', { date, count: bookings.length });
+      return bookings;
+    } catch (error) {
+      this.logger.error('某天所有预约查询失败', error?.stack, { date });
+      throw error;
+    }
   }
 
   async getProductDailyBookings(productId: number, date: string): Promise<Booking[]> {
-    return this.bookingsRepository
-      .createQueryBuilder('booking')
-      .where('booking.productId = :productId', { productId })
-      .andWhere('booking.bookingDate = :date', { date })
-      .andWhere('booking.status NOT IN (:...excludedStatuses)', {
-        excludedStatuses: ['cancelled', 'no_show', 'deleted'],
-      })
-      .orderBy('booking.bookingTime', 'ASC')
-      .getMany();
+    this.logger.log(`查询某产品某天所有预约 productId=${productId}, date=${date}`);
+    try {
+      const bookings = await this.bookingsRepository
+        .createQueryBuilder('booking')
+        .where('booking.productId = :productId', { productId })
+        .andWhere('booking.bookingDate = :date', { date })
+        .andWhere('booking.status NOT IN (:...excludedStatuses)', {
+          excludedStatuses: ['cancelled', 'no_show', 'deleted'],
+        })
+        .orderBy('booking.bookingTime', 'ASC')
+        .getMany();
+      this.logger.log('某产品某天所有预约查询成功', { productId, date, count: bookings.length });
+      return bookings;
+    } catch (error) {
+      this.logger.error('某产品某天所有预约查询失败', error?.stack, { productId, date });
+      throw error;
+    }
   }
 
   // 统计方法
@@ -376,22 +405,26 @@ export class BookingsService {
     completed: number;
     cancelled: number;
   }> {
-    const stats = await this.bookingsRepository.createQueryBuilder('booking').select('booking.status', 'status').addSelect('COUNT(*)', 'count').groupBy('booking.status').getRawMany();
-
-    const result = {
-      total: 0,
-      pending: 0,
-      confirmed: 0,
-      completed: 0,
-      cancelled: 0,
-    };
-
-    stats.forEach(stat => {
-      const count = parseInt(stat.count);
-      result.total += count;
-      result[stat.status] = count;
-    });
-
-    return result;
+    this.logger.log('查询预约统计');
+    try {
+      const stats = await this.bookingsRepository.createQueryBuilder('booking').select('booking.status', 'status').addSelect('COUNT(*)', 'count').groupBy('booking.status').getRawMany();
+      const result = {
+        total: 0,
+        pending: 0,
+        confirmed: 0,
+        completed: 0,
+        cancelled: 0,
+      };
+      stats.forEach(stat => {
+        const count = parseInt(stat.count);
+        result.total += count;
+        result[stat.status] = count;
+      });
+      this.logger.log('预约统计查询成功', result);
+      return result;
+    } catch (error) {
+      this.logger.error('预约统计查询失败', error?.stack);
+      throw error;
+    }
   }
 }

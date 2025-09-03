@@ -30,21 +30,32 @@ export class ProductsService {
     private readonly subcategoryRepository: Repository<Subcategory>,
 
     private readonly logger: AppLogger // 依赖注入
-  ) {}
+  ) {
+    this.logger.setContext(ProductsService.name);
+  }
 
   async create(createProductDto: CreateProductDto): Promise<Product> {
-    // 验证子分类是否存在
+    this.logger.log('创建商品', { createProductDto });
     const subcategory = await this.subcategoryRepository.findOne({
       where: { id: createProductDto.subcategoryId },
     });
     if (!subcategory) {
+      this.logger.error('创建商品失败，子分类不存在', undefined, { subcategoryId: createProductDto.subcategoryId });
       throw new NotFoundException(`子分类ID ${createProductDto.subcategoryId} 不存在`);
     }
     const product = this.productRepository.create(createProductDto);
-    return await this.productRepository.save(product);
+    try {
+      const saved = await this.productRepository.save(product);
+      this.logger.log('商品创建成功', { id: saved.id });
+      return saved;
+    } catch (error) {
+      this.logger.error('商品创建失败', error?.stack, { createProductDto });
+      throw error;
+    }
   }
 
   async findAll(params: FindAllProductsParams) {
+    this.logger.log('查询商品列表', params);
     const { page = 1, limit = 10, subcategoryId, isActive, tags } = params;
     const skip = (page - 1) * limit;
     const where: any = {};
@@ -58,76 +69,128 @@ export class ProductsService {
     if (tags) {
       where.tags = In(tags.split(','));
     }
-    const [data, total] = await this.productRepository.findAndCount({
-      where,
-      relations: ['subcategory'],
-      skip,
-      take: limit,
-      order: { createdAt: 'DESC' },
-    });
-    this.logger.log(`Fetched products - total: ${total}`);
-    return { data, total };
+    try {
+      const [data, total] = await this.productRepository.findAndCount({
+        where,
+        relations: ['subcategory'],
+        skip,
+        take: limit,
+        order: { createdAt: 'DESC' },
+      });
+      this.logger.log(`商品列表获取成功，总数: ${total}`);
+      return { data, total };
+    } catch (error) {
+      this.logger.error('商品列表获取失败', error?.stack, params);
+      throw error;
+    }
   }
 
   async findOne(id: number): Promise<{ data: Product; message: string }> {
+    this.logger.log(`查询商品详情 id=${id}`);
     const product = await this.productRepository.findOne({
       where: { id },
       relations: ['subcategory'],
     });
 
     if (!product) {
+      this.logger.error('商品详情未找到', undefined, { id });
       throw new NotFoundException(`Product with ID ${id} not found`);
     }
 
+    this.logger.log('商品详情获取成功', { id });
     return { data: product, message: 'Product retrieved successfully' };
   }
 
   async update(id: number, updateProductDto: UpdateProductDto): Promise<{ data: Product }> {
+    this.logger.log(`更新商品 id=${id}`, { updateProductDto });
     const product = await this.findOne(id);
     const updated = this.productRepository.merge(product.data, updateProductDto);
-    return { data: await this.productRepository.save(updated) };
-  }
-
-  async remove(id: number): Promise<void> {
-    const result = await this.productRepository.delete(id);
-    if (result.affected === 0) {
-      throw new NotFoundException(`Product with ID ${id} not found`);
+    try {
+      const saved = await this.productRepository.save(updated);
+      this.logger.log('商品更新成功', { id });
+      return { data: saved };
+    } catch (error) {
+      this.logger.error('商品更新失败', error?.stack, { id, updateProductDto });
+      throw error;
     }
   }
 
+  async remove(id: number): Promise<void> {
+    this.logger.log(`删除商品 id=${id}`);
+    const result = await this.productRepository.delete(id);
+    if (result.affected === 0) {
+      this.logger.error('商品删除失败，未找到', undefined, { id });
+      throw new NotFoundException(`Product with ID ${id} not found`);
+    }
+    this.logger.log('商品删除成功', { id });
+  }
+
   async updateStock(id: number, quantity: number): Promise<{ data: Product }> {
+    this.logger.log(`修改商品库存 id=${id}, quantity=${quantity}`);
     const product = await this.findOne(id);
     product.data.stockQuantity = quantity;
-    return { data: await this.productRepository.save(product.data) };
+    try {
+      const saved = await this.productRepository.save(product.data);
+      this.logger.log('商品库存修改成功', { id, quantity });
+      return { data: saved };
+    } catch (error) {
+      this.logger.error('商品库存修改失败', error?.stack, { id, quantity });
+      throw error;
+    }
   }
 
   async updateActiveStatus(id: number, isActive: boolean): Promise<Product> {
+    this.logger.log(`修改商品上架状态 id=${id}, isActive=${isActive}`);
     const product = await this.findOne(id);
     product.data.isActive = isActive;
-    return await this.productRepository.save(product.data);
+    try {
+      const saved = await this.productRepository.save(product.data);
+      this.logger.log('商品上架状态修改成功', { id, isActive });
+      return saved;
+    } catch (error) {
+      this.logger.error('商品上架状态修改失败', error?.stack, { id, isActive });
+      throw error;
+    }
   }
 
   async findByTags(tags: string[]): Promise<Product[]> {
-    return await this.productRepository.find({
-      where: {
-        tags: In(tags),
-        isActive: true,
-      },
-      take: 20,
-    });
+    this.logger.log('根据标签查询商品', { tags });
+    try {
+      const products = await this.productRepository.find({
+        where: {
+          tags: In(tags),
+          isActive: true,
+        },
+        take: 20,
+      });
+      this.logger.log('标签商品查询成功', { count: products.length });
+      return products;
+    } catch (error) {
+      this.logger.error('标签商品查询失败', error?.stack, { tags });
+      throw error;
+    }
   }
 
   async findRelated(id: number, limit: number): Promise<{ data: Product[]; message?: string }> {
-    // 这里可以根据实际业务，比如同分类、同标签等，返回相关产品
+    this.logger.log(`查询相关商品 id=${id}, limit=${limit}`);
     const product = await this.productRepository.findOne({ where: { id } });
-    if (!product) return { data: [], message: 'Product not found' };
-    const relatedProducts = await this.productRepository.find({
-      where: {
-        subcategoryId: product.subcategoryId,
-        id: Not(id), // 排除自身
-      },
-      take: limit, // 返回指定数量的相关产品
-    });
-    return { data: relatedProducts };
+    if (!product) {
+      this.logger.error('相关商品查询失败，商品未找到', undefined, { id });
+      return { data: [], message: 'Product not found' };
+    }
+    try {
+      const relatedProducts = await this.productRepository.find({
+        where: {
+          subcategoryId: product.subcategoryId,
+          id: Not(id), // 排除自身
+        },
+        take: limit, // 返回指定数量的相关产品
+      });
+      this.logger.log('相关商品查询成功', { id, count: relatedProducts.length });
+      return { data: relatedProducts };
+    } catch (error) {
+      this.logger.error('相关商品查询失败', error?.stack, { id, limit });
+      throw error;
+    }
   }
 }
