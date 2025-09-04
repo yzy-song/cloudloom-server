@@ -74,10 +74,9 @@ perform_rollback() {
 # 清理旧备份
 cleanup_backups() {
     log "${YELLOW}Cleaning old backups...${NC}"
-    find "$BACKUPS_DIR" -mindepth 1 -maxdepth 1 -type d -printf '%P\\n' | sort | head -n -5 | xargs -I {} rm -rf "$BACKUPS_DIR/{}" || {
-        log "${RED}✗ Failed to clean old backups${NC}"
-    }
-    log "${GREEN}✓ Old backups cleaned successfully${NC}"
+    # 修复：移除对不存在的.tar.gz备份的清理
+    # 仅清理旧的 release 目录
+    ls -t "${RELEASES_DIR}" | tail -n +6 | xargs -I {} rm -rf "${RELEASES_DIR}/{}"
 }
 
 # 执行回滚流程
