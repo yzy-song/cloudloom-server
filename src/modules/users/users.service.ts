@@ -61,7 +61,7 @@ export class UsersService {
   }
 
   async remove(id: string) {
-    this.logger.log(`从db永久删除用户 id=${id}`);
+    this.logger.log(`从db删除用户 id=${id}`);
     try {
       const result = await this.userRepo.delete(id);
       this.logger.log('用户删除成功', { id });
