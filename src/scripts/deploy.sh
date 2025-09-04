@@ -293,6 +293,7 @@ pm2 startOrReload "${ECOSYSTEM_CONFIG_FILE}" --env production --cwd "${DEPLOY_RO
 wait_for_app_health
 
 # 13. 清理旧版本
+echo "${YELLOW}Releases need to clean:" $(find "${RELEASES_DIR}" -mindepth 1 -maxdepth 1 -type d -printf '%P\n' | sort | head -n -4)
 echo -e "${YELLOW}Cleaning old releases...${NC}"
 find "${RELEASES_DIR}" -mindepth 1 -maxdepth 1 -type d -printf '%P\n' | sort | head -n -4 | xargs -I {} rm -rf "${RELEASES_DIR}/{}"
 echo -e "${GREEN}✓ Old releases cleaned up${NC}"

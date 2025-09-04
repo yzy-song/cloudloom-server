@@ -1,9 +1,10 @@
 /*
  * 产品实体，包含商品的详细信息
  */
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
 import { Subcategory } from './subcategory.entity';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { UserFavorite } from './user-favorite.entity';
 
 @Entity('products')
 export class Product {
@@ -49,7 +50,7 @@ export class Product {
 
   @ApiProperty({ description: '产品图片列表', type: [String], example: ['https://example.com/1.png'] })
   @Column({ type: 'jsonb', default: [] })
-  images: any[];
+  images: string[];
 
   @ApiProperty({ description: '标签', type: [String], example: ['古风', '女装'] })
   @Column({ type: 'jsonb', default: [] })
@@ -95,4 +96,7 @@ export class Product {
   @ApiPropertyOptional({ description: '子分类ID', example: 2 })
   @Column({ name: 'subcategory_id', nullable: false })
   subcategoryId: number;
+
+  @OneToMany(() => UserFavorite, favorite => favorite.product)
+  favoritedBy: UserFavorite[];
 }

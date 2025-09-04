@@ -12,6 +12,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Exclude } from 'class-transformer';
 import * as bcrypt from 'bcrypt';
 import { UserRole } from './user-role.entity';
+import { UserFavorite } from './user-favorite.entity';
 
 @Entity('users')
 @Index('idx_users_email', ['email'])
@@ -59,6 +60,9 @@ export class User {
 
   @OneToMany(() => UserRole, userRole => userRole.user)
   userRoles: UserRole[];
+
+  @OneToMany(() => UserFavorite, favorite => favorite.user)
+  favorites: UserFavorite[];
 
   /**
    * 密码哈希处理

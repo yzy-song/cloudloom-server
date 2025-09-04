@@ -43,7 +43,10 @@ export class ProductsService {
       this.logger.error('创建商品失败，子分类不存在', undefined, { subcategoryId: createProductDto.subcategoryId });
       throw new NotFoundException(`子分类ID ${createProductDto.subcategoryId} 不存在`);
     }
-    const product = this.productRepository.create(createProductDto);
+    const product = this.productRepository.create({
+      ...createProductDto,
+      images: createProductDto.images?.map(img => (typeof img === 'string' ? img : img.url)), // 假设ImageDto有url字段
+    });
     try {
       const saved = await this.productRepository.save(product);
       this.logger.log('商品创建成功', { id: saved.id });
@@ -104,7 +107,11 @@ export class ProductsService {
   async update(id: number, updateProductDto: UpdateProductDto): Promise<{ data: Product }> {
     this.logger.log(`更新商品 id=${id}`, { updateProductDto });
     const product = await this.findOne(id);
-    const updated = this.productRepository.merge(product.data, updateProductDto);
+    const updateData = {
+      ...updateProductDto,
+      images: updateProductDto.images?.map(img => (typeof img === 'string' ? img : img.url)),
+    };
+    const updated = this.productRepository.merge(product.data, updateData);
     try {
       const saved = await this.productRepository.save(updated);
       this.logger.log('商品更新成功', { id });

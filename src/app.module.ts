@@ -2,7 +2,7 @@
  * @Author: yzy
  * @Date: 2025-08-19 21:45:37
  * @LastEditors: yzy
- * @LastEditTime: 2025-08-30 09:58:23
+ * @LastEditTime: 2025-09-04 16:40:00
  */
 // src/app.module.ts
 import { Module } from '@nestjs/common';
@@ -11,6 +11,9 @@ import { AllExceptionsFilter } from './filters/all-exceptions.filter';
 
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ServeStaticModule } from '@nestjs/serve-static'; // <-- 1. 导入 ServeStaticModule
+import { join } from 'path'; // <-- 2. 导入 Node.js 的 path 模块
+
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ProductsModule } from './modules/products/products.module';
@@ -19,18 +22,30 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
 import { AuthModule } from './modules/auth/auth.module';
 import { PaymentsModule } from './modules/payments/payments.module';
 import { CategoriesModule } from './modules/categories/categories.module';
-import { CollaborationApplicationsModule } from './modules/collaboration-applications/collaboration-applications.module'; // 导入新模块
+import { CollaborationApplicationsModule } from './modules/collaboration-applications/collaboration-applications.module';
 import { LoggerModule } from './utils/logger.module';
 import { UsersModule } from './modules/users/users.module';
 import { RolesModule } from './modules/roles/roles.module';
 import { PermissionsModule } from './modules/permissions/permissions.module';
 import { SurveyModule } from './modules/survey/survey.module';
+import { UserFavoritesModule } from './modules/user-favorites/user-favorites.module';
+import { UploadsModule } from './modules/uploads/uploads.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '.env',
+    }),
+    // 3. 在这里添加 ServeStaticModule 的配置
+    ServeStaticModule.forRoot({
+      // rootPath 指向的是你希望作为静态资源服务的文件夹
+      // join(__dirname, '..', 'public') 会解析为项目根目录下的 'public' 文件夹
+      rootPath: join(__dirname, '..', 'public'),
+      // serveRoot 是 URL 的前缀。设置为 '/' 意味着 public 文件夹的根目录
+      // 直接对应于应用的根 URL。例如，public/uploads/image.jpg
+      // 可以通过 http://localhost:3000/uploads/image.jpg 访问。
+      serveRoot: '/',
     }),
     TypeOrmModule.forRootAsync({
       useFactory: (configService: ConfigService) => ({
@@ -56,8 +71,10 @@ import { SurveyModule } from './modules/survey/survey.module';
     BookingsModule,
     NotificationsModule,
     CategoriesModule,
-    CollaborationApplicationsModule, // 添加新模块
+    CollaborationApplicationsModule,
     SurveyModule,
+    UserFavoritesModule,
+    UploadsModule,
   ],
   controllers: [AppController],
   providers: [
