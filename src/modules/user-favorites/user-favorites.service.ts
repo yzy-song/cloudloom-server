@@ -57,7 +57,7 @@ export class UserFavoritesService {
     const result = await this.userFavoriteRepository.delete({ userId, productId });
 
     if (result.affected === 0) {
-      throw new NotFoundException('未找到要取消的收藏记录');
+      throw new NotFoundException('未找到要取消的收藏');
     }
     this.logger.log(`用户 ${userId} 成功取消收藏商品 ${productId}`);
   }
