@@ -15,8 +15,6 @@ export class SurveyService {
   ) {}
 
   async createResponse(createResponseDto: CreateResponseDto) {
-    // 假设我们总是将回复关联到 ID 为 1 的调查问卷
-    // 在实际应用中，这个 ID 可能是动态的
     const surveyId = 1;
     const survey = await this.surveyRepository.findOneBy({ id: surveyId });
 
@@ -25,16 +23,23 @@ export class SurveyService {
     }
 
     const newResponse = this.responseRepository.create({
-      answers: createResponseDto.answers,
-      survey: survey, // 关联到找到的问卷
-      // 如果需要，也可以关联用户
-      // user: ...
+      survey: survey,
+
+      // 映射到独立列，用于高效查询和联系
+      city: createResponseDto.residence,
+      age: createResponseDto.demographics.age,
+      gender: createResponseDto.demographics.gender,
+      name: createResponseDto.name, // 新增
+      email: createResponseDto.email, // 新增
+      phone: createResponseDto.phone, // 新增
+
+      // 将完整的原始问卷数据存入 answers JSONB 字段，用于完整性备份
+      answers: createResponseDto,
     });
 
     return this.responseRepository.save(newResponse);
   }
 
-  // (保留) 获取所有问卷的逻辑
   findAllSurveys() {
     return this.surveyRepository.find();
   }

@@ -53,6 +53,18 @@ export class Response {
   city: string;
 
   /**
+   * 新增：用户填写的年龄段（可选）
+   */
+  @Column({ type: 'varchar', length: 50, nullable: true })
+  age: string;
+
+  /**
+   * 新增：用户填写的性别（可选）
+   */
+  @Column({ type: 'varchar', length: 50, nullable: true })
+  gender: string;
+
+  /**
    * 回答提交时间
    * @CreateDateColumn: TypeORM 自动生成创建时间
    */

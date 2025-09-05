@@ -1,5 +1,5 @@
 import { Type } from 'class-transformer';
-import { IsString, IsArray, IsOptional, IsNumber, IsObject, ValidateNested, IsNotEmpty } from 'class-validator';
+import { IsString, IsArray, IsOptional, IsNumber, IsObject, ValidateNested, IsNotEmpty, IsEmail } from 'class-validator';
 
 // 用于验证 demographics 嵌套对象
 class DemographicsDto {
@@ -20,15 +20,29 @@ class DemographicsDto {
   nationality: string;
 }
 
-// 用于验证 answers 核心对象
-class SurveyAnswersDto {
+// 完整的问卷数据DTO
+export class CreateResponseDto {
+  // 新增：联系方式字段
+  @IsString()
+  @IsOptional()
+  name?: string;
+
+  @IsEmail() // 添加邮箱格式验证
+  @IsOptional()
+  email?: string;
+
+  @IsString()
+  @IsOptional()
+  phone?: string;
+
+  // --- 原有字段 ---
   @IsArray()
   @IsString({ each: true })
   @IsOptional()
   recognizedItems: string[];
 
   @IsString()
-  @IsOptional()
+  @IsNotEmpty() // residence/city 是必填项
   residence: string;
 
   @IsString()
@@ -81,13 +95,4 @@ class SurveyAnswersDto {
   @IsString()
   @IsOptional()
   feedback: string;
-}
-
-// 最外层的 DTO
-export class CreateResponseDto {
-  @IsObject()
-  @ValidateNested()
-  @Type(() => SurveyAnswersDto)
-  @IsNotEmpty()
-  answers: SurveyAnswersDto;
 }
