@@ -147,14 +147,23 @@ wait_for_app_health() {
     
     while [ $attempt -lt $max_attempts ] && [ "$healthy" != "true" ]; do
         ((attempt++))
+        echo -e "${CYAN}Checking application health (attempt $attempt/$max_attempts)...${NC}"
         
-        if curl -sf http://localhost:3000/api/health >/dev/null 2>&1; then
+        # 暂时移除 -sf 和重定向，打印响应
+        response=$(curl -s http://localhost:3000/api/health)
+        local curl_exit_code=$?
+        
+        echo -e "${YELLOW}Curl exit code: $curl_exit_code${NC}"
+        echo -e "${YELLOW}Response: $response${NC}"
+        
+        if [ $curl_exit_code -eq 0 ] && [[ "$response" == *"\"status\":\"ok\""* ]]; then
             healthy=true
             echo -e "${GREEN}✓ Application is healthy after $attempt attempts${NC}"
             return 0
+        else
+            echo -e "${YELLOW}Attempt $attempt/$max_attempts: Waiting for application to be ready...${NC}"
         fi
         
-        echo -e "${YELLOW}Attempt $attempt/$max_attempts: Waiting for application to be ready...${NC}"
         sleep 5
     done
     

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, UsePipes, ValidationPipe } from '@nestjs/common';
+import { Controller, Get, Post, Body } from '@nestjs/common';
 import { SurveyService } from './survey.service';
 import { CreateResponseDto } from './dto/create-response.dto';
 
@@ -6,14 +6,13 @@ import { CreateResponseDto } from './dto/create-response.dto';
 export class SurveyController {
   constructor(private readonly surveyService: SurveyService) {}
 
-  @Post('responses')
-  @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
+  @Post('responses') // 定义接口路径为 POST /survey/responses
   create(@Body() createResponseDto: CreateResponseDto) {
-    return this.surveyService.create(createResponseDto);
+    return this.surveyService.createResponse(createResponseDto);
   }
 
-  @Get('responses')
+  @Get()
   findAll() {
-    return this.surveyService.findAll();
+    return this.surveyService.findAllSurveys();
   }
 }

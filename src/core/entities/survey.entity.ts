@@ -1,4 +1,4 @@
-import { Entity, PrimaryColumn, Column, OneToMany, CreateDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany, CreateDateColumn } from 'typeorm';
 import { Response } from './response.entity';
 
 /**
@@ -9,10 +9,9 @@ import { Response } from './response.entity';
 export class Survey {
   /**
    * 问卷的唯一标识符（主键）
-   * @PrimaryColumn: 手动指定主键值
    */
-  @PrimaryColumn({ type: 'varchar', length: 255 })
-  id: string;
+  @PrimaryGeneratedColumn()
+  id: number;
 
   /**
    * 问卷标题
