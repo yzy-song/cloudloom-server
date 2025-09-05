@@ -14,33 +14,36 @@ export class SurveyService {
     private readonly responseRepository: Repository<Response>
   ) {}
 
-  async createResponse(createResponseDto: CreateResponseDto) {
-    const surveyId = 1;
-    const survey = await this.surveyRepository.findOneBy({ id: surveyId });
+  /**
+   * 创建一个新的问卷回答，并将其关联到指定的问卷
+   * @param surveyId - 目标问卷的ID
+   * @param createResponseDto - 包含用户回答的数据
+   * @returns 创建的 Response 实体
+   */
+  async createResponse(surveyId: number, createResponseDto: CreateResponseDto): Promise<Response> {
+    const { name, email, phone, residence, demographics, ...answers } = createResponseDto;
+    const { age, gender } = demographics;
 
+    // 步骤 1: 验证目标问卷是否存在
+    const survey = await this.surveyRepository.findOne({ where: { id: surveyId } });
     if (!survey) {
-      throw new NotFoundException(`Survey with ID "${surveyId}" not found`);
+      // 如果找不到问卷，则抛出 404 错误
+      throw new NotFoundException(`Survey with ID ${surveyId} not found`);
     }
 
+    // 步骤 2: 使用动态的 surveyId 创建新的 response 实体
     const newResponse = this.responseRepository.create({
-      survey: survey,
-
-      // 映射到独立列，用于高效查询和联系
-      city: createResponseDto.residence,
-      age: createResponseDto.demographics.age,
-      gender: createResponseDto.demographics.gender,
-      name: createResponseDto.name, // 新增
-      email: createResponseDto.email, // 新增
-      phone: createResponseDto.phone, // 新增
-
-      // 将完整的原始问卷数据存入 answers JSONB 字段，用于完整性备份
-      answers: createResponseDto,
+      survey_id: surveyId, // 使用从 URL 传入的 surveyId
+      name,
+      email,
+      phone,
+      city: residence,
+      age,
+      gender,
+      answers, // 将剩余的所有问卷问题答案存入 JSON 字段
     });
 
+    // 步骤 3: 保存并返回新的 response
     return this.responseRepository.save(newResponse);
-  }
-
-  findAllSurveys() {
-    return this.surveyRepository.find();
   }
 }
