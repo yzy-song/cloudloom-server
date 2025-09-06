@@ -66,10 +66,10 @@ export class AuthService {
     }
   }
 
-  async register(registerUserDto: RegisterUserDto): Promise<User> {
+  // 1. 修改返回类型，让它和 login 方法一致
+  async register(registerUserDto: RegisterUserDto): Promise<{ accessToken: string; user: User }> {
     const { username, email, password } = registerUserDto;
 
-    // 检查用户名或邮箱是否已存在
     const existingUser = await this.usersRepository.findOne({
       where: [{ username }, { email }],
     });
@@ -78,7 +78,6 @@ export class AuthService {
       throw new ConflictException('用户名或邮箱已存在');
     }
 
-    // 密码加密
     const salt = await bcrypt.genSalt();
     const hashedPassword = await bcrypt.hash(password, salt);
 
@@ -89,7 +88,6 @@ export class AuthService {
     });
     const savedUser = await this.usersRepository.save(newUser);
 
-    // 查找“普通用户”角色
     const role = await this.roleRepository.findOne({ where: { name: 'customer' } });
     if (role) {
       await this.userRoleRepository.save({
@@ -98,7 +96,19 @@ export class AuthService {
       });
     }
 
-    return savedUser;
+    // 2. 为新创建的用户生成 accessToken
+    const payload = { username: savedUser.username, sub: savedUser.id };
+    const accessToken = this.jwtService.sign(payload);
+
+    // 3. 移除返回对象中的 passwordHash
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { passwordHash, ...userToReturn } = savedUser;
+
+    // 4. 返回和 login 接口一样的数据结构
+    return {
+      accessToken,
+      user: userToReturn as User,
+    };
   }
 
   async login(loginUserDto: LoginUserDto): Promise<{ accessToken: string; user: User }> {
@@ -117,23 +127,28 @@ export class AuthService {
   }
 
   async validateUser(identifier: string, password: string): Promise<any> {
-    let user: User | null = null;
-    // 一次性查询用户（根据用户名或邮箱）
-    user = await this.usersRepository.findOne({
+    const user = await this.usersRepository.findOne({
       where: [{ username: identifier }, { email: identifier }],
     });
 
-    // 如果用户不存在
     if (!user) {
-      throw new UnauthorizedException('用户不存在');
+      throw new UnauthorizedException('User not found');
     }
 
-    // 用户存在但密码错误
-    if (!(await bcrypt.compare(password, user.passwordHash))) {
-      throw new UnauthorizedException('密码错误');
+    // 检查 passwordHash 是否存在且不为空
+    if (!user.passwordHash) {
+      // 如果 passwordHash 为空，说明是第三方注册用户
+      throw new UnauthorizedException('You seem to have registered via a third-party service (e.g., Google). Please use the corresponding login method.');
     }
 
-    // 验证成功，返回用户信息（不包含密码）
+    // 正常进行密码比对
+    const isPasswordMatching = await bcrypt.compare(password, user.passwordHash);
+    if (!isPasswordMatching) {
+      // 如果密码不匹配，则是真正的密码错误
+      throw new UnauthorizedException('Incorrect password');
+    }
+
+    // 验证成功，返回用户信息
     const { passwordHash: _, ...result } = user;
     return result;
   }
@@ -157,7 +172,7 @@ export class AuthService {
     try {
       decoded = await admin.auth().verifyIdToken(dto.idToken);
     } catch (e) {
-      throw new UnauthorizedException('无效的 firebase token');
+      throw new UnauthorizedException('Invalid Firebase ID token');
     }
 
     // decoded.uid, decoded.email, decoded.name, decoded.picture
@@ -178,9 +193,24 @@ export class AuthService {
     }
 
     const payload = { username: user.username, sub: user.id };
+    this.logger.log(`OAuth 用户登录: ${user.username} (ID: ${user.id})`);
     return {
       accessToken: this.jwtService.sign(payload),
       user,
     };
+  }
+
+  async getProfile(userId: string): Promise<User> {
+    const user = await this.usersRepository.findOne({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { passwordHash, ...result } = user;
+    return result as User;
   }
 }

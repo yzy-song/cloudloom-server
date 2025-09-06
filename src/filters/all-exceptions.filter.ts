@@ -4,7 +4,7 @@
  * @LastEditors: yzy
  * @LastEditTime: 2025-08-23 10:29:20
  */
-import { ExceptionFilter, Catch, ArgumentsHost, HttpException } from '@nestjs/common';
+import { ExceptionFilter, Catch, ArgumentsHost, HttpException, HttpStatus } from '@nestjs/common';
 import { AppLogger } from '../utils/logger';
 
 @Catch()
@@ -20,21 +20,36 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const response = ctx.getResponse();
     const request = ctx.getRequest();
 
-    const status = exception instanceof HttpException ? exception.getStatus() : 500;
+    const status = exception instanceof HttpException ? exception.getStatus() : HttpStatus.INTERNAL_SERVER_ERROR;
 
-    // 类型守卫：确保 exception 是 Error 类型
-    const message = exception instanceof Error ? exception.toString() : 'Unknown error';
+    // 提取更具体的错误信息
+    let message: any = 'Internal server error';
+    if (exception instanceof HttpException) {
+      const response = exception.getResponse();
+      if (typeof response === 'string') {
+        message = response;
+      } else if (typeof response === 'object' && response !== null) {
+        // 兼容 class-validator 的错误格式
+        message = (response as any).message || message;
+      }
+    } else if (exception instanceof Error) {
+      message = exception.message;
+    }
+
     const stack = exception instanceof Error ? exception.stack : undefined;
 
-    this.logger.error(`Exception: ${message}`, stack, {
+    // 日志记录保持不变
+    this.logger.error(`Exception: ${Array.isArray(message) ? JSON.stringify(message) : message}`, stack, {
       path: request.url,
       method: request.method,
       statusCode: status,
       timestamp: new Date().toISOString(),
     });
 
+    // 在返回给前端的 JSON 中包含 message
     response.status(status).json({
       statusCode: status,
+      message: message, // <--- 核心改动在这里
       timestamp: new Date().toISOString(),
       path: request.url,
     });

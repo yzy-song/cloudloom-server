@@ -4,7 +4,7 @@
  * @LastEditors: yzy
  * @LastEditTime: 2025-08-25 12:10:46
  */
-import { Controller, Get, Post, Patch, Delete, Body, Param, Query, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Body, Param, Query, ParseIntPipe, DefaultValuePipe } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
 import { ProductsService } from './products.service';
 import { AppLogger } from '../../utils/logger';
@@ -38,7 +38,13 @@ export class ProductsController {
   @ApiQuery({ name: 'isActive', required: false, description: '是否上架', example: true })
   @ApiQuery({ name: 'tags', required: false, description: '标签，逗号分隔', example: '女装,古风' })
   @ApiResponse({ status: 200, description: '商品列表', type: [Product] })
-  findAll(@Query('page', ParseIntPipe) page: number = 1, @Query('limit', ParseIntPipe) limit: number = 10, @Query('subcategoryId') subcategoryId?: number, @Query('isActive') isActive?: boolean, @Query('tags') tags?: string) {
+  findAll(
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
+    @Query('subcategoryId') subcategoryId?: number,
+    @Query('isActive') isActive?: boolean,
+    @Query('tags') tags?: string
+  ) {
     this.logger.log(`GET /products 查询商品列表 page=${page}, limit=${limit}, subcategoryId=${subcategoryId}, isActive=${isActive}, tags=${tags}`);
     return this.productsService.findAll({ page, limit, subcategoryId, isActive, tags });
   }

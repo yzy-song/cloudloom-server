@@ -4,7 +4,7 @@
  * @LastEditors: yzy
  * @LastEditTime: 2025-08-27 21:11:11
  */
-import { Controller, Post, Body, UseGuards, Request, HttpStatus, HttpCode } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Request, HttpStatus, HttpCode, Get } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { AppLogger } from '../../utils/logger';
@@ -25,10 +25,19 @@ export class AuthController {
   }
 
   @Post('register')
-  @ApiOperation({ summary: '用户注册', description: '注册新用户，返回用户信息' })
-  @ApiResponse({ status: 201, description: '注册成功', type: User })
+  @ApiOperation({ summary: '用户注册', description: '注册新用户并自动登录，返回 accessToken 和用户信息' })
+  @ApiResponse({
+    status: 201,
+    description: '注册成功并自动登录',
+    schema: {
+      properties: {
+        accessToken: { type: 'string', description: 'JWT 访问令牌' },
+        user: { $ref: '#/components/schemas/User' },
+      },
+    },
+  })
   @ApiResponse({ status: 409, description: '用户名或邮箱已存在' })
-  async register(@Body() registerUserDto: RegisterUserDto): Promise<User> {
+  async register(@Body() registerUserDto: RegisterUserDto): Promise<{ accessToken: string; user: User }> {
     this.logger.log('POST /auth/register 用户注册', { registerUserDto });
     return this.authService.register(registerUserDto);
   }
@@ -80,5 +89,16 @@ export class AuthController {
   async oauthLogin(@Body() dto: OAuthLoginDto): Promise<{ accessToken: string; user: User }> {
     this.logger.log('POST /auth/oauth-login 第三方登录', { dto });
     return this.authService.oauthLogin(dto);
+  }
+
+  @Get('profile')
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard('jwt'))
+  @ApiOperation({ summary: '获取用户个人资料', description: '获取当前登录用户的详细信息' })
+  @ApiResponse({ status: 200, description: '成功获取用户资料', type: User })
+  @ApiResponse({ status: 401, description: '未授权' })
+  getProfile(@Request() req) {
+    this.logger.log('GET /auth/profile 获取用户资料', { userId: req.user.id });
+    return this.authService.getProfile(req.user.id);
   }
 }
