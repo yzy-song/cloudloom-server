@@ -14,6 +14,8 @@ import * as bcrypt from 'bcrypt';
 import { UserRole } from './user-role.entity';
 import { UserFavorite } from './user-favorite.entity';
 
+import { Photo } from './photo.entity';
+
 @Entity('users')
 @Index('idx_users_email', ['email'])
 export class User {
@@ -63,6 +65,9 @@ export class User {
 
   @OneToMany(() => UserFavorite, favorite => favorite.user)
   favorites: UserFavorite[];
+
+  @OneToMany(() => Photo, photo => photo.user)
+  photos: Photo[];
 
   /**
    * 密码哈希处理
