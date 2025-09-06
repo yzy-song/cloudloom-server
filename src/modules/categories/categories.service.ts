@@ -23,14 +23,24 @@ export class CategoriesService {
     return await this.categoryRepository.save(category);
   }
 
+  /**
+   * 查询所有分类，并包含其下的所有子分类
+   */
   async findAll(): Promise<Category[]> {
-    return await this.categoryRepository.find();
+    // 使用 relations 选项来加载关联的 subcategories
+    return await this.categoryRepository.find({
+      relations: ['subcategories'],
+    });
   }
 
+  /**
+   * 查询单个分类，并包含其下的所有子分类
+   */
   async findOne(id: number): Promise<Category> {
     const category = await this.categoryRepository.findOne({
       where: { id },
-      relations: ['products'],
+      // 修复：将 'products' 修正为 'subcategories'
+      relations: ['subcategories'],
     });
 
     if (!category) {
