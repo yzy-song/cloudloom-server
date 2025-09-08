@@ -30,6 +30,7 @@ import { PermissionsModule } from './modules/permissions/permissions.module';
 import { SurveyModule } from './modules/survey/survey.module';
 import { UserFavoritesModule } from './modules/user-favorites/user-favorites.module';
 import { UploadsModule } from './modules/uploads/uploads.module';
+import { PhotosModule } from './modules/photos/photos.module';
 
 @Module({
   imports: [
@@ -75,6 +76,7 @@ import { UploadsModule } from './modules/uploads/uploads.module';
     SurveyModule,
     UserFavoritesModule,
     UploadsModule,
+    PhotosModule,
   ],
   controllers: [AppController],
   providers: [

@@ -25,52 +25,59 @@ export class ProductsController {
   @Post()
   @ApiOperation({ summary: '创建商品' })
   @ApiResponse({ status: 201, description: '创建成功', type: Product })
-  create(@Body() createProductDto: CreateProductDto) {
+  async create(@Body() createProductDto: CreateProductDto) {
     this.logger.log('POST /products 创建商品', { createProductDto });
-    return this.productsService.create(createProductDto);
+    const result = await this.productsService.create(createProductDto);
+    return { data: result, message: '商品创建成功' };
   }
 
   @Get()
-  @ApiOperation({ summary: '商品列表', description: '支持分页、分类、上下架、标签筛选' })
+  @ApiOperation({ summary: '商品列表', description: '支持分页、大类、子分类、上下架、标签筛选' })
   @ApiQuery({ name: 'page', required: false, description: '页码', example: 1 })
   @ApiQuery({ name: 'limit', required: false, description: '每页数量', example: 10 })
+  @ApiQuery({ name: 'categoryId', required: false, description: '大类ID', example: 1 })
   @ApiQuery({ name: 'subcategoryId', required: false, description: '子分类ID', example: 2 })
   @ApiQuery({ name: 'isActive', required: false, description: '是否上架', example: true })
   @ApiQuery({ name: 'tags', required: false, description: '标签，逗号分隔', example: '女装,古风' })
   @ApiResponse({ status: 200, description: '商品列表', type: [Product] })
-  findAll(
+  async findAll(
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
     @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
+    @Query('categoryId') categoryId?: number,
     @Query('subcategoryId') subcategoryId?: number,
     @Query('isActive') isActive?: boolean,
     @Query('tags') tags?: string
   ) {
-    this.logger.log(`GET /products 查询商品列表 page=${page}, limit=${limit}, subcategoryId=${subcategoryId}, isActive=${isActive}, tags=${tags}`);
-    return this.productsService.findAll({ page, limit, subcategoryId, isActive, tags });
+    this.logger.log(`GET /products 查询商品列表 page=${page}, limit=${limit}, categoryId=${categoryId}, subcategoryId=${subcategoryId}, isActive=${isActive}, tags=${tags}`);
+    const result = await this.productsService.findAll({ page, limit, categoryId, subcategoryId, isActive, tags });
+    return { ...result, message: '商品列表获取成功' };
   }
 
   @Get(':id')
   @ApiOperation({ summary: '商品详情' })
   @ApiResponse({ status: 200, description: '商品详情', type: Product })
-  findOne(@Param('id', ParseIntPipe) id: number) {
+  async findOne(@Param('id', ParseIntPipe) id: number) {
     this.logger.log(`GET /products/${id} 查询商品详情`);
-    return this.productsService.findOne(id);
+    const result = await this.productsService.findOne(id);
+    return result;
   }
 
   @Patch(':id')
   @ApiOperation({ summary: '更新商品' })
   @ApiResponse({ status: 200, description: '更新成功', type: Product })
-  update(@Param('id', ParseIntPipe) id: number, @Body() updateProductDto: UpdateProductDto) {
+  async update(@Param('id', ParseIntPipe) id: number, @Body() updateProductDto: UpdateProductDto) {
     this.logger.log(`PATCH /products/${id} 更新商品`, { updateProductDto });
-    return this.productsService.update(id, updateProductDto);
+    const result = await this.productsService.update(id, updateProductDto);
+    return { ...result, message: '商品更新成功' };
   }
 
   @Delete(':id')
   @ApiOperation({ summary: '删除商品' })
   @ApiResponse({ status: 200, description: '删除成功' })
-  remove(@Param('id', ParseIntPipe) id: number) {
+  async remove(@Param('id', ParseIntPipe) id: number) {
     this.logger.log(`DELETE /products/${id} 删除商品`);
-    return this.productsService.remove(id);
+    await this.productsService.remove(id);
+    return { message: '商品删除成功' };
   }
 
   @Patch(':id/stock-quantity')
@@ -95,6 +102,7 @@ export class ProductsController {
   @ApiResponse({ status: 200, description: '相关产品列表', type: [Product] })
   async findRelated(@Param('id', ParseIntPipe) id: number, @Query('limit', ParseIntPipe) limit: number = 8) {
     this.logger.log(`GET /products/${id}/related 查询相关产品 limit=${limit}`);
-    return this.productsService.findRelated(id, limit);
+    const result = await this.productsService.findRelated(id, limit);
+    return { ...result, message: '相关产品获取成功' };
   }
 }

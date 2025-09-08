@@ -45,7 +45,8 @@ export class BookingsController {
   @Patch(':id/cancel')
   async cancel(@Param('id') id: string) {
     this.logger.log(`PATCH /bookings/${id}/cancel 取消预约`);
-    return this.bookingsService.cancel(id);
+    const booking = await this.bookingsService.cancel(id);
+    return { data: booking, message: '预约已取消' };
   }
 
   // 获取预约列表（支持高级筛选）
@@ -65,9 +66,10 @@ export class BookingsController {
     description: '返回预约列表',
     type: [Booking],
   })
-  findAll(@Query() query: BookingQueryDto) {
+  async findAll(@Query() query: BookingQueryDto) {
     this.logger.log('GET /bookings 查询预约列表', query);
-    return this.bookingsService.findAll(query);
+    const result = await this.bookingsService.findAll(query);
+    return { ...result, message: '预约列表获取成功' };
   }
 
   // 高级搜索预约（可合并到findAll，也可保留）
@@ -78,9 +80,10 @@ export class BookingsController {
     description: '返回搜索结果',
     type: [Booking],
   })
-  search(@Query() query: BookingQueryDto) {
+  async search(@Query() query: BookingQueryDto) {
     this.logger.log('GET /bookings/search 高级搜索预约', query);
-    return this.bookingsService.searchBookings(query);
+    const result = await this.bookingsService.searchBookings(query);
+    return { ...result, message: '预约搜索成功' };
   }
 
   // 获取可用时间段
@@ -97,9 +100,10 @@ export class BookingsController {
     status: 404,
     description: '产品未找到',
   })
-  getAvailableTimeSlots(@Param('productId', ParseIntPipe) productId: number, @Param('date') date: string) {
+  async getAvailableTimeSlots(@Param('productId', ParseIntPipe) productId: number, @Param('date') date: string) {
     this.logger.log(`GET /bookings/${productId}/available-slots/${date} 获取可用时间段`);
-    return this.bookingsService.getAvailableTimeSlots(productId, date);
+    const slots = await this.bookingsService.getAvailableTimeSlots(productId, date);
+    return { data: slots, message: '可用时间段获取成功' };
   }
 
   // 获取某天的所有预约
@@ -111,9 +115,10 @@ export class BookingsController {
     description: '返回当天的预约列表',
     type: [Booking],
   })
-  getDailyBookings(@Param('date') date: string) {
+  async getDailyBookings(@Param('date') date: string) {
     this.logger.log(`GET /bookings/date/${date} 获取某天的所有预约`);
-    return this.bookingsService.getDailyBookings(date);
+    const bookings = await this.bookingsService.getDailyBookings(date);
+    return { data: bookings, message: '当天预约获取成功' };
   }
 
   // 获取某产品某天的所有预约
@@ -126,9 +131,10 @@ export class BookingsController {
     description: '返回该产品当天的预约列表',
     type: [Booking],
   })
-  getProductDailyBookings(@Param('productId', ParseIntPipe) productId: number, @Param('date') date: string) {
+  async getProductDailyBookings(@Param('productId', ParseIntPipe) productId: number, @Param('date') date: string) {
     this.logger.log(`GET /bookings/product/${productId}/date/${date} 获取某产品某天的所有预约`);
-    return this.bookingsService.getProductDailyBookings(productId, date);
+    const bookings = await this.bookingsService.getProductDailyBookings(productId, date);
+    return { data: bookings, message: '该产品当天预约获取成功' };
   }
 
   // 获取预约统计
@@ -148,9 +154,10 @@ export class BookingsController {
       },
     },
   })
-  getBookingStats() {
+  async getBookingStats() {
     this.logger.log('GET /bookings/stats 获取预约统计');
-    return this.bookingsService.getBookingStats();
+    const stats = await this.bookingsService.getBookingStats();
+    return { data: stats, message: '预约统计获取成功' };
   }
 
   // 获取预约详情
@@ -168,7 +175,8 @@ export class BookingsController {
   })
   async getBookingDetail(@Param('bookingNumber') bookingNumber: string) {
     this.logger.log(`GET /bookings/${bookingNumber} 获取预约详情`);
-    return this.bookingsService.findByBookingNumber(bookingNumber);
+    const booking = await this.bookingsService.findByBookingNumber(bookingNumber);
+    return { data: booking, message: '预约详情获取成功' };
   }
 
   // 更新预约信息
@@ -188,9 +196,10 @@ export class BookingsController {
     status: 400,
     description: '请求参数错误',
   })
-  update(@Param('bookingNumber') bookingNumber: string, @Body() updateBookingDto: UpdateBookingDto) {
+  async update(@Param('bookingNumber') bookingNumber: string, @Body() updateBookingDto: UpdateBookingDto) {
     this.logger.log(`PATCH /bookings/${bookingNumber} 更新预约`, { updateBookingDto });
-    return this.bookingsService.update(bookingNumber, updateBookingDto);
+    const booking = await this.bookingsService.update(bookingNumber, updateBookingDto);
+    return { status: 0, data: booking, message: '预约更新成功' };
   }
 
   // 软删除预约（推荐用 PATCH，语义更清晰）
@@ -211,6 +220,7 @@ export class BookingsController {
   })
   async softDelete(@Param('bookingNumber') bookingNumber: string) {
     this.logger.log(`PATCH /bookings/${bookingNumber}/delete 软删除预约`);
-    return this.bookingsService.remove(bookingNumber);
+    const result = await this.bookingsService.remove(bookingNumber);
+    return { status: 0, ...result, message: '预约已成功删除' };
   }
 }

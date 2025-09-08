@@ -37,9 +37,10 @@ export class AuthController {
     },
   })
   @ApiResponse({ status: 409, description: '用户名或邮箱已存在' })
-  async register(@Body() registerUserDto: RegisterUserDto): Promise<{ accessToken: string; user: User }> {
+  async register(@Body() registerUserDto: RegisterUserDto): Promise<{ data: { accessToken: string; user: User }; message: string }> {
     this.logger.log('POST /auth/register 用户注册', { registerUserDto });
-    return this.authService.register(registerUserDto);
+    const result = await this.authService.register(registerUserDto);
+    return result;
   }
 
   @Post('login')
@@ -55,9 +56,10 @@ export class AuthController {
     },
   })
   @ApiResponse({ status: 401, description: '无效的凭证' })
-  async login(@Body() loginUserDto: LoginUserDto): Promise<{ accessToken: string }> {
+  async login(@Body() loginUserDto: LoginUserDto): Promise<{ data: { accessToken: string; user: User }; message: string }> {
     this.logger.log('POST /auth/login 用户登录', { loginUserDto });
-    return this.authService.login(loginUserDto);
+    const result = await this.authService.login(loginUserDto);
+    return result;
   }
 
   @Post('logout')
@@ -86,9 +88,10 @@ export class AuthController {
     },
   })
   @ApiResponse({ status: 401, description: '无效的 token' })
-  async oauthLogin(@Body() dto: OAuthLoginDto): Promise<{ accessToken: string; user: User }> {
+  async oauthLogin(@Body() dto: OAuthLoginDto): Promise<{ data: { accessToken: string; user: User }; message: string }> {
     this.logger.log('POST /auth/oauth-login 第三方登录', { dto });
-    return this.authService.oauthLogin(dto);
+    const result = await this.authService.oauthLogin(dto);
+    return result;
   }
 
   @Get('profile')
@@ -97,8 +100,9 @@ export class AuthController {
   @ApiOperation({ summary: '获取用户个人资料', description: '获取当前登录用户的详细信息' })
   @ApiResponse({ status: 200, description: '成功获取用户资料', type: User })
   @ApiResponse({ status: 401, description: '未授权' })
-  getProfile(@Request() req) {
+  async getProfile(@Request() req): Promise<{ data: User; message: string }> {
     this.logger.log('GET /auth/profile 获取用户资料', { userId: req.user.id });
-    return this.authService.getProfile(req.user.id);
+    const result = await this.authService.getProfile(req.user.id);
+    return result;
   }
 }

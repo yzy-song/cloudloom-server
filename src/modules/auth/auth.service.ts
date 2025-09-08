@@ -67,7 +67,7 @@ export class AuthService {
   }
 
   // 1. 修改返回类型，让它和 login 方法一致
-  async register(registerUserDto: RegisterUserDto): Promise<{ accessToken: string; user: User }> {
+  async register(registerUserDto: RegisterUserDto): Promise<{ data: { accessToken: string; user: User }; message: string }> {
     const { username, email, password } = registerUserDto;
 
     const existingUser = await this.usersRepository.findOne({
@@ -106,19 +106,25 @@ export class AuthService {
 
     // 4. 返回和 login 接口一样的数据结构
     return {
-      accessToken,
-      user: userToReturn as User,
+      data: {
+        accessToken,
+        user: userToReturn as User,
+      },
+      message: '注册成功',
     };
   }
 
-  async login(loginUserDto: LoginUserDto): Promise<{ accessToken: string; user: User }> {
+  async login(loginUserDto: LoginUserDto): Promise<{ data: { accessToken: string; user: User }; message: string }> {
     try {
       const user = await this.validateUser(loginUserDto.identifier, loginUserDto.password);
       const payload = { username: user.username, sub: user.id };
       this.logger.log(`用户登录: ${user.username} (ID: ${user.username})`);
       return {
-        accessToken: this.jwtService.sign(payload),
-        user: user, // 返回用户信息
+        data: {
+          accessToken: this.jwtService.sign(payload),
+          user: user,
+        },
+        message: '登录成功',
       };
     } catch (error) {
       // 直接抛出 validateUser 中的错误
@@ -167,7 +173,7 @@ export class AuthService {
     }
   }
 
-  async oauthLogin(dto: OAuthLoginDto): Promise<{ accessToken: string; user: User }> {
+  async oauthLogin(dto: OAuthLoginDto): Promise<{ data: { accessToken: string; user: User }; message: string }> {
     let decoded;
     try {
       decoded = await admin.auth().verifyIdToken(dto.idToken);
@@ -195,12 +201,15 @@ export class AuthService {
     const payload = { username: user.username, sub: user.id };
     this.logger.log(`OAuth 用户登录: ${user.username} (ID: ${user.id})`);
     return {
-      accessToken: this.jwtService.sign(payload),
-      user,
+      data: {
+        accessToken: this.jwtService.sign(payload),
+        user,
+      },
+      message: 'OAuth 登录成功',
     };
   }
 
-  async getProfile(userId: string): Promise<User> {
+  async getProfile(userId: string): Promise<{ data: User; message: string }> {
     const user = await this.usersRepository.findOne({
       where: { id: userId },
     });
@@ -211,6 +220,9 @@ export class AuthService {
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { passwordHash, ...result } = user;
-    return result as User;
+    return {
+      data: result as User,
+      message: '获取用户信息成功',
+    };
   }
 }

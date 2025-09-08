@@ -15,6 +15,7 @@ import { Subcategory } from 'src/core/entities/subcategory.entity';
 export interface FindAllProductsParams {
   page?: number;
   limit?: number;
+  categoryId?: number;
   subcategoryId?: number;
   isActive?: boolean;
   tags?: string;
@@ -59,27 +60,37 @@ export class ProductsService {
 
   async findAll(params: FindAllProductsParams) {
     this.logger.log('查询商品列表', params);
-    const { page = 1, limit = 10, subcategoryId, isActive, tags } = params;
+    const { page = 1, limit = 12, categoryId, subcategoryId, isActive, tags } = params;
     const skip = (page - 1) * limit;
-    const where: any = {};
+
+    const query = this.productRepository.createQueryBuilder('product').leftJoinAndSelect('product.subcategory', 'subcategory').where('1=1');
 
     if (subcategoryId !== undefined) {
-      where.subcategoryId = subcategoryId;
+      query.andWhere('product.subcategoryId = :subcategoryId', { subcategoryId });
     }
     if (isActive !== undefined) {
-      where.isActive = isActive;
+      query.andWhere('product.isActive = :isActive', { isActive });
     }
     if (tags) {
-      where.tags = In(tags.split(','));
+      const tagArr = tags.split(',');
+      for (const tag of tagArr) {
+        query.andWhere(`product.tags @> :tag`, { tag: JSON.stringify([tag]) });
+      }
     }
+    if (categoryId !== undefined) {
+      // 查询该大类下所有子分类id
+      const subcategories = await this.subcategoryRepository.find({ where: { category: { id: categoryId } } });
+      const subcategoryIds = subcategories.map(sc => sc.id);
+      if (subcategoryIds.length > 0) {
+        query.andWhere('product.subcategoryId IN (:...subcategoryIds)', { subcategoryIds });
+      } else {
+        // 没有子分类，直接返回空
+        return { data: [], total: 0 };
+      }
+    }
+
     try {
-      const [data, total] = await this.productRepository.findAndCount({
-        where,
-        relations: ['subcategory'],
-        skip,
-        take: limit,
-        order: { createdAt: 'DESC' },
-      });
+      const [data, total] = await query.skip(skip).take(limit).orderBy('product.createdAt', 'DESC').getManyAndCount();
       this.logger.log(`商品列表获取成功，总数: ${total}`);
       return { data, total };
     } catch (error) {

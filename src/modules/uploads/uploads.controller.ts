@@ -97,9 +97,9 @@ export class UploadsController {
     };
     const type = req.params.type;
     const subDir = typeMap[type];
-    const response = files.map(file => ({
-      path: `${subDir}/${file.filename}`, // 只返回相对路径
+    const data = files.map(file => ({
+      path: `${subDir}/${file.filename}`,
     }));
-    return response;
+    return { data, message: '上传成功' };
   }
 }

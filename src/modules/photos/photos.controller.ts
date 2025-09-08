@@ -26,20 +26,20 @@ export class PhotosController {
     })
   )
   uploadFile(@UploadedFile() file, @Request() req) {
-    return this.photosService.create(file.filename, req.user.id);
+    return this.photosService.create(file.filename, req.user.id).then(photo => ({ data: photo, message: '上传成功' }));
   }
 
   @Get()
   findAll(@Query('userId') userId?: string) {
     if (userId) {
-      return this.photosService.findByUser(userId);
+      return this.photosService.findByUser(userId).then(list => ({ data: list }));
     }
-    return this.photosService.findAll();
+    return this.photosService.findAll().then(list => ({ data: list }));
   }
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard)
   remove(@Param('id') id: string, @Request() req) {
-    return this.photosService.remove(+id, req.user.id);
+    return this.photosService.remove(+id, req.user.id).then(() => ({ message: '删除成功' }));
   }
 }
