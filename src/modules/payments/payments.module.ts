@@ -10,9 +10,10 @@ import { PaymentsController } from './payments.controller';
 import { PaymentsService } from './payments.service';
 import { PaymentsWebhookController } from './payments.webhook.controller';
 import { PaymentsWebhookService } from './payments.webhook.service';
+import { BookingsModule } from '../bookings/bookings.module';
 
 @Module({
-  imports: [ConfigModule.forRoot({ isGlobal: true })],
+  imports: [ConfigModule.forRoot({ isGlobal: true }), BookingsModule],
   controllers: [PaymentsController, PaymentsWebhookController],
   providers: [PaymentsService, PaymentsWebhookService],
   exports: [PaymentsService, PaymentsWebhookService],

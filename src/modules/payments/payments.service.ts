@@ -4,7 +4,7 @@
  * @LastEditors: yzy
  * @LastEditTime: 2025-08-26 02:09:02
  */
-import { Injectable } from '@nestjs/common';
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Stripe } from 'stripe';
 import { CreatePaymentDto } from './dto/create-payment.dto';
@@ -23,15 +23,68 @@ export class PaymentsService {
     });
   }
 
-  async createPayment(createPaymentDto: CreatePaymentDto) {
-    const { amount, currency, description } = createPaymentDto;
-    const paymentIntent = await this.stripe.paymentIntents.create({
-      amount,
-      currency,
-      description,
-      // 不要加 payment_method，不要加 confirm
+  async createPaymentIntent(createPaymentDto: CreatePaymentDto): Promise<{ clientSecret: string }> {
+    try {
+      const { amount, currency, description } = createPaymentDto;
+      const paymentIntent = await this.stripe.paymentIntents.create({
+        amount,
+        currency,
+        description,
+      });
+      if (!paymentIntent.client_secret) {
+        throw new InternalServerErrorException('PaymentIntent client_secret is null.');
+      }
+      return { clientSecret: paymentIntent.client_secret };
+    } catch (error) {
+      console.error('Error creating payment intent:', error);
+      throw new InternalServerErrorException('Failed to create payment intent.');
+    }
+  }
+
+  /**
+   * NEW METHOD for Stripe Checkout
+   * Creates a Stripe Checkout Session and returns its ID.
+   * @param items - The items in the cart
+   * @param bookingId - The id of the booking
+   */
+  async createCheckoutSession(items: { name: string; amount: number; quantity: number }[], bookingId: number): Promise<{ code: number; message: string; data: { sessionId: string } }> {
+    const host = process.env.FRONTEND_URL || 'https://cloudloom.yzysong.com';
+
+    const line_items = items.map(item => {
+      return {
+        price_data: {
+          currency: 'usd',
+          product_data: {
+            name: item.name,
+          },
+          unit_amount: item.amount * 100, // amount in cents
+        },
+        quantity: item.quantity,
+      };
     });
-    return paymentIntent;
+
+    try {
+      const session = await this.stripe.checkout.sessions.create({
+        payment_method_types: ['card'],
+        line_items,
+        mode: 'payment',
+        success_url: `${process.env.FRONTEND_URL}/payment-success?bookingId=${bookingId}`,
+        cancel_url: `${process.env.FRONTEND_URL}/payment-cancelled`,
+        metadata: {
+          bookingId: bookingId,
+        },
+      });
+      return {
+        code: 0,
+        message: 'Checkout session created successfully',
+        data: {
+          sessionId: session.id,
+        },
+      };
+    } catch (error) {
+      console.error('Error creating checkout session:', error);
+      throw new InternalServerErrorException('Failed to create checkout session.');
+    }
   }
 
   async handleWebhook(event: Stripe.Event) {

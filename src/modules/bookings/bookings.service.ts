@@ -95,17 +95,18 @@ export class BookingsService {
     try {
       const saved = await this.bookingsRepository.save(booking);
       this.logger.log('预约创建成功', { bookingNumber: saved.bookingNumber });
-      const paymentResult = await this.paymentsService.createPayment({
+      const paymentIntent = await this.paymentsService.createPaymentIntent({
         amount: Math.round(saved.totalAmount * 100),
         currency: 'usd',
         description: `预约号：${saved.bookingNumber}`,
+        bookingId: saved.id,
       });
       return {
         code: 0,
-        message: '预约成功',
+        message: '预约创建成功',
         data: {
           ...saved,
-          client_secret: paymentResult.client_secret ?? '',
+          client_secret: paymentIntent.clientSecret,
         },
       };
     } catch (error) {

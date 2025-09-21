@@ -44,7 +44,7 @@ export class PaymentsWebhookController {
       return res.status(400).send(`Webhook Error: ${err.message}`);
     }
 
-    await this.paymentsWebhookService.handleEvent(event);
+    await this.paymentsWebhookService.handleWebhookEvent(event);
 
     res.json({ received: true });
   }

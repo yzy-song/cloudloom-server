@@ -30,6 +30,7 @@ async function bootstrap() {
   app.use('/payments/webhook', bodyParser.raw({ type: 'application/json' }));
 
   const port = configService.get('PORT') || 3000;
-  await app.listen(port);
+  await app.listen(port, '0.0.0.0');
+  console.log(`Application is running on: ${await app.getUrl()}`);
 }
 bootstrap();

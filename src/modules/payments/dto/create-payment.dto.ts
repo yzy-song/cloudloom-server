@@ -9,6 +9,14 @@ export class CreatePaymentDto {
   @IsString()
   readonly currency: string;
 
+  /**
+   * 与此支付关联的内部预订/订单ID
+   * @example 123
+   */
+  @IsString()
+  @IsNotEmpty()
+  bookingId: string;
+
   @IsNotEmpty()
   @IsString()
   readonly paymentMethodId?: string;
