@@ -16,7 +16,7 @@ export class PhotosService {
   async create(url: string, userId: string): Promise<Photo> {
     const user = await this.usersRepository.findOneBy({ id: userId });
     if (!user) {
-      throw new UnauthorizedException('用户不存在');
+      throw new UnauthorizedException('User not exist');
     }
     const photo = this.photosRepository.create({ url, user });
     return this.photosRepository.save(photo);
@@ -39,10 +39,10 @@ export class PhotosService {
       relations: ['user'],
     });
     if (!photo) {
-      throw new UnauthorizedException('照片不存在');
+      throw new UnauthorizedException('Photo not exist');
     }
     if (!photo.user || photo.user.id !== userId) {
-      throw new UnauthorizedException('无权操作');
+      throw new UnauthorizedException('Operation not permitted');
     }
     await this.photosRepository.delete(id);
   }

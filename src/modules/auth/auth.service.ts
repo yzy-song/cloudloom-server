@@ -4,7 +4,7 @@
  * @LastEditors: yzy
  * @LastEditTime: 2025-08-29 19:34:19
  */
-import { Injectable, UnauthorizedException, ConflictException, Inject, Logger } from '@nestjs/common';
+import { Injectable, UnauthorizedException, ConflictException, Inject, Logger, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -72,7 +72,7 @@ export class AuthService {
     });
 
     if (existingUser) {
-      throw new ConflictException('用户名或邮箱已存在');
+      throw new ConflictException('Username or email already exists');
     }
 
     const salt = await bcrypt.genSalt();
@@ -107,7 +107,7 @@ export class AuthService {
         accessToken,
         user: userToReturn as User,
       },
-      message: '注册成功',
+      message: 'Registration successful!',
     };
   }
 
@@ -121,7 +121,7 @@ export class AuthService {
           accessToken: this.jwtService.sign(payload),
           user: user,
         },
-        message: '登录成功',
+        message: 'Login successful!',
       };
     } catch (error) {
       // 直接抛出 validateUser 中的错误
@@ -135,20 +135,20 @@ export class AuthService {
     });
 
     if (!user) {
-      throw new UnauthorizedException('User not found');
+      throw new NotFoundException('User not exist');
     }
 
     // 检查 passwordHash 是否存在且不为空
     if (!user.passwordHash) {
       // 如果 passwordHash 为空，说明是第三方注册用户
-      throw new UnauthorizedException('You seem to have registered via a third-party service (e.g., Google). Please use the corresponding login method.');
+      throw new ForbiddenException('You seem to have registered via Google. Please use Google login method.');
     }
 
     // 正常进行密码比对
     const isPasswordMatching = await bcrypt.compare(password, user.passwordHash);
     if (!isPasswordMatching) {
       // 如果密码不匹配，则是真正的密码错误
-      throw new UnauthorizedException('Incorrect password');
+      throw new UnauthorizedException('Incorrect password, please try again.');
     }
 
     // 验证成功，返回用户信息
@@ -202,7 +202,7 @@ export class AuthService {
         accessToken: this.jwtService.sign(payload),
         user,
       },
-      message: 'OAuth 登录成功',
+      message: 'Login successful!',
     };
   }
 
@@ -212,14 +212,14 @@ export class AuthService {
     });
 
     if (!user) {
-      throw new UnauthorizedException('User not found');
+      throw new UnauthorizedException('User not exist');
     }
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { passwordHash, ...result } = user;
     return {
       data: result as User,
-      message: '获取用户信息成功',
+      message: 'Get user information successful!',
     };
   }
 }
