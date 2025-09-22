@@ -4,7 +4,7 @@
  * @LastEditors: yzy
  * @LastEditTime: 2025-08-29 19:34:19
  */
-import { Injectable, UnauthorizedException, ConflictException, Inject } from '@nestjs/common';
+import { Injectable, UnauthorizedException, ConflictException, Inject, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -16,7 +16,6 @@ import * as bcrypt from 'bcryptjs';
 import { type Cache } from 'cache-manager';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 
-import { AppLogger } from '../../utils/logger';
 import * as admin from 'firebase-admin';
 import { ConfigService } from '@nestjs/config';
 import { Role } from '../../core/entities/role.entity';
@@ -24,6 +23,7 @@ import { UserRole } from '../../core/entities/user-role.entity';
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
   constructor(
     @InjectRepository(User)
     private usersRepository: Repository<User>,
@@ -38,11 +38,8 @@ export class AuthService {
     private cacheManager: Cache,
 
     private jwtService: JwtService,
-    private readonly configService: ConfigService,
-    private readonly logger: AppLogger
+    private readonly configService: ConfigService
   ) {
-    this.logger.setContext(AuthService.name);
-
     // 获取环境变量并立即打印它们
     const privateKey = this.configService.get<string>('FIREBASE_PRIVATE_KEY');
     const clientEmail = this.configService.get<string>('FIREBASE_CLIENT_EMAIL');

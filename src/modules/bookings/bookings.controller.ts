@@ -1,6 +1,5 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, ParseIntPipe, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, ParseIntPipe, HttpCode, HttpStatus, Logger } from '@nestjs/common';
 import { BookingsService } from './bookings.service';
-import { AppLogger } from '../../utils/logger';
 import { CreateBookingDto, UpdateBookingDto } from './dto/create-booking.dto';
 import { BookingQueryDto } from './dto/booking-query.dto';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
@@ -9,12 +8,8 @@ import { Booking } from '../../core/entities/booking.entity';
 @ApiTags('bookings')
 @Controller('bookings')
 export class BookingsController {
-  constructor(
-    private readonly bookingsService: BookingsService,
-    private readonly logger: AppLogger
-  ) {
-    this.logger.setContext(BookingsController.name);
-  }
+  private readonly logger = new Logger(BookingsController.name);
+  constructor(private readonly bookingsService: BookingsService) {}
 
   // 创建预约
   @Post()

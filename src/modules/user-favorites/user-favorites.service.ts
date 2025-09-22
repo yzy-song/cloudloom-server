@@ -1,24 +1,22 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { UserFavorite } from '../../core/entities/user-favorite.entity';
 import { Product } from '../../core/entities/product.entity';
 import { User } from '../../core/entities/user.entity';
-import { AppLogger } from '../../utils/logger';
 
 @Injectable()
 export class UserFavoritesService {
+  private readonly logger = new Logger(UserFavoritesService.name);
+
   constructor(
     @InjectRepository(UserFavorite)
     private readonly userFavoriteRepository: Repository<UserFavorite>,
     @InjectRepository(Product)
     private readonly productRepository: Repository<Product>,
     @InjectRepository(User)
-    private readonly userRepository: Repository<User>,
-    private readonly logger: AppLogger
-  ) {
-    this.logger.setContext(UserFavoritesService.name);
-  }
+    private readonly userRepository: Repository<User>
+  ) {}
 
   async addFavorite(userId: string, productId: number): Promise<UserFavorite> {
     this.logger.log(`用户 ${userId} 尝试收藏商品 ${productId}`);

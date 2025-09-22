@@ -4,10 +4,9 @@
  * @LastEditors: yzy
  * @LastEditTime: 2025-08-27 21:11:11
  */
-import { Controller, Post, Body, UseGuards, Request, HttpStatus, HttpCode, Get } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Request, HttpStatus, HttpCode, Get, Logger } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
-import { AppLogger } from '../../utils/logger';
 import { RegisterUserDto } from './dto/register-user.dto';
 import { LoginUserDto } from './dto/login-user.dto';
 import { User } from '../../core/entities/user.entity';
@@ -17,12 +16,8 @@ import { OAuthLoginDto } from './dto/oauth-login.dto';
 @ApiTags('认证')
 @Controller('auth')
 export class AuthController {
-  constructor(
-    private authService: AuthService,
-    private readonly logger: AppLogger
-  ) {
-    this.logger.setContext(AuthController.name);
-  }
+  private readonly logger = new Logger(AuthController.name);
+  constructor(private authService: AuthService) {}
 
   @Post('register')
   @ApiOperation({ summary: '用户注册', description: '注册新用户并自动登录，返回 accessToken 和用户信息' })
@@ -89,7 +84,6 @@ export class AuthController {
   })
   @ApiResponse({ status: 401, description: '无效的 token' })
   async oauthLogin(@Body() dto: OAuthLoginDto): Promise<{ data: { accessToken: string; user: User }; message: string }> {
-    this.logger.log('POST /auth/oauth-login 第三方登录', { dto });
     const result = await this.authService.oauthLogin(dto);
     return result;
   }

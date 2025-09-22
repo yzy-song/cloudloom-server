@@ -4,16 +4,13 @@
  * @LastEditors: yzy
  * @LastEditTime: 2025-08-23 10:29:20
  */
-import { ExceptionFilter, Catch, ArgumentsHost, HttpException, HttpStatus } from '@nestjs/common';
-import { AppLogger } from '../utils/logger';
+import { ExceptionFilter, Catch, ArgumentsHost, HttpException, HttpStatus, Logger } from '@nestjs/common';
 
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
-  private readonly logger = new AppLogger();
+  private readonly logger = new Logger(AllExceptionsFilter.name);
 
-  constructor() {
-    this.logger.setContext(AllExceptionsFilter.name);
-  }
+  constructor() {}
 
   catch(exception: unknown, host: ArgumentsHost) {
     const ctx = host.switchToHttp();

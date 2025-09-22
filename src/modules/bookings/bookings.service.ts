@@ -4,7 +4,7 @@
  * @LastEditors: yzy
  * @LastEditTime: 2025-08-26 02:49:40
  */
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Booking } from '../../core/entities/booking.entity';
@@ -12,7 +12,6 @@ import { Product } from '../../core/entities/product.entity';
 import { NotificationsService } from '../notifications/notifications.service';
 import { CreateBookingDto, UpdateBookingDto } from './dto/create-booking.dto';
 import { BookingQueryDto } from './dto/booking-query.dto';
-import { AppLogger } from '../../utils/logger';
 
 import { ConfigService } from '@nestjs/config';
 import { Stripe } from 'stripe';
@@ -20,25 +19,23 @@ import { PaymentsService } from '../payments/payments.service';
 
 @Injectable()
 export class BookingsService {
-  private stripe: Stripe;
-
+  // private stripe: Stripe;
+  private readonly logger = new Logger(BookingsService.name);
   constructor(
     @InjectRepository(Booking)
     private bookingsRepository: Repository<Booking>,
     @InjectRepository(Product)
     private notificationsService: NotificationsService,
     private paymentsService: PaymentsService,
-    private readonly logger: AppLogger, // 依赖注入
     private readonly configService: ConfigService
   ) {
-    this.logger.setContext(BookingsService.name);
-    const stripeSecretKey = this.configService.get<string>('STRIPE_SECRET_KEY');
-    if (!stripeSecretKey) {
-      throw new Error('STRIPE_SECRET_KEY is not defined in environment variables');
-    }
-    this.stripe = new Stripe(stripeSecretKey, {
-      apiVersion: '2025-07-30.basil',
-    });
+    // const stripeSecretKey = this.configService.get<string>('STRIPE_SECRET_KEY');
+    // if (!stripeSecretKey) {
+    //   throw new Error('STRIPE_SECRET_KEY is not defined in environment variables');
+    // }
+    // this.stripe = new Stripe(stripeSecretKey, {
+    //   apiVersion: '2025-07-30.basil',
+    // });
   }
 
   // 新增：预约号生成服务
@@ -73,9 +70,9 @@ export class BookingsService {
   }
 
   async create(createBookingDto: CreateBookingDto): Promise<{ code: number; message: string; data: Booking & { client_secret: string } }> {
-    this.logger.log('创建预约', { createBookingDto });
     const bookingNumber = await this.generateBookingNumber();
 
+    this.logger.log(`生成预约号: ${bookingNumber}`);
     if (createBookingDto.bookingType === 'standard' && !createBookingDto.productId) {
       this.logger.error('创建预约失败，标准预约缺少产品', undefined, { createBookingDto });
       throw new BadRequestException('标准预约需要选择产品');
@@ -94,12 +91,11 @@ export class BookingsService {
     const booking = this.bookingsRepository.create(bookingData);
     try {
       const saved = await this.bookingsRepository.save(booking);
-      this.logger.log('预约创建成功', { bookingNumber: saved.bookingNumber });
       const paymentIntent = await this.paymentsService.createPaymentIntent({
         amount: Math.round(saved.totalAmount * 100),
-        currency: 'usd',
-        description: `预约号：${saved.bookingNumber}`,
-        bookingId: saved.id,
+        currency: 'eur',
+        description: `备注信息：${saved.notes ?? ''}`,
+        bookingNumber: saved.bookingNumber,
       });
       return {
         code: 0,

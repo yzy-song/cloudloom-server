@@ -4,13 +4,12 @@
  * @LastEditors: yzy
  * @LastEditTime: 2025-08-27 23:18:43
  */
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In, Not } from 'typeorm';
 import { Product } from '../../core/entities/product.entity';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
-import { AppLogger } from '../../utils/logger';
 import { Subcategory } from 'src/core/entities/subcategory.entity';
 export interface FindAllProductsParams {
   page?: number;
@@ -23,17 +22,14 @@ export interface FindAllProductsParams {
 
 @Injectable()
 export class ProductsService {
+  private readonly logger = new Logger(ProductsService.name);
   constructor(
     @InjectRepository(Product)
     private readonly productRepository: Repository<Product>,
 
     @InjectRepository(Subcategory)
-    private readonly subcategoryRepository: Repository<Subcategory>,
-
-    private readonly logger: AppLogger // 依赖注入
-  ) {
-    this.logger.setContext(ProductsService.name);
-  }
+    private readonly subcategoryRepository: Repository<Subcategory>
+  ) {}
 
   async create(createProductDto: CreateProductDto): Promise<Product> {
     this.logger.log('创建商品', { createProductDto });

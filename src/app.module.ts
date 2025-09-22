@@ -23,7 +23,6 @@ import { AuthModule } from './modules/auth/auth.module';
 import { PaymentsModule } from './modules/payments/payments.module';
 import { CategoriesModule } from './modules/categories/categories.module';
 import { CollaborationApplicationsModule } from './modules/collaboration-applications/collaboration-applications.module';
-import { LoggerModule } from './utils/logger.module';
 import { UsersModule } from './modules/users/users.module';
 import { RolesModule } from './modules/roles/roles.module';
 import { PermissionsModule } from './modules/permissions/permissions.module';
@@ -31,7 +30,7 @@ import { SurveyModule } from './modules/survey/survey.module';
 import { UserFavoritesModule } from './modules/user-favorites/user-favorites.module';
 import { UploadsModule } from './modules/uploads/uploads.module';
 import { PhotosModule } from './modules/photos/photos.module';
-
+import { AppLogger } from './utils/logger';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -62,7 +61,6 @@ import { PhotosModule } from './modules/photos/photos.module';
       }),
       inject: [ConfigService],
     }),
-    LoggerModule,
     AuthModule,
     UsersModule,
     RolesModule,
@@ -85,6 +83,7 @@ import { PhotosModule } from './modules/photos/photos.module';
       provide: APP_FILTER,
       useClass: AllExceptionsFilter,
     },
+    AppLogger,
   ],
 })
 export class AppModule {}

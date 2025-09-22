@@ -15,7 +15,7 @@ export class CreatePaymentDto {
    */
   @IsString()
   @IsNotEmpty()
-  bookingId: string;
+  bookingNumber: string;
 
   @IsNotEmpty()
   @IsString()

@@ -17,6 +17,7 @@ export class PaymentsWebhookService {
   constructor(private readonly bookingsService: BookingsService) {}
 
   async handleWebhookEvent(event: Stripe.Event) {
+    this.logger.log(`Received Stripe event: ${event.type}`);
     switch (event.type) {
       case 'checkout.session.completed':
         const session = event.data.object as Stripe.Checkout.Session;
@@ -39,10 +40,10 @@ export class PaymentsWebhookService {
         const charge = event.data.object as Stripe.Charge;
         this.logger.log('Charge refunded:', charge);
 
-        const orderId = charge.metadata?.orderId;
-        if (orderId) {
-          // await this.orderService.updateStatus(orderId, 'refunded');
-          this.logger.log(`订单 ${orderId} 已退款`);
+        const bookingNumber = charge.metadata?.bookingNumber;
+        if (bookingNumber) {
+          // await this.orderService.updateStatus(bookingNumber, 'refunded');
+          this.logger.log(`订单 ${bookingNumber} 已退款`);
         }
         break;
       }
@@ -58,25 +59,25 @@ export class PaymentsWebhookService {
    * 这是更新数据库、发送邮件等核心业务逻辑的地方
    */
   private async handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) {
-    const bookingId = session.metadata?.bookingId;
+    const bookingNumber = session.metadata?.bookingNumber;
 
-    if (!bookingId) {
+    if (!bookingNumber) {
       // 这是一个严重错误，需要记录下来排查
-      this.logger.error(`严重错误: checkout.session.completed 事件的元数据中缺少 bookingId! Session ID: ${session.id}`);
+      this.logger.error(`严重错误: checkout.session.completed 事件的元数据中缺少 bookingNumber! Session ID: ${session.id}`);
       return;
     }
 
-    this.logger.log(`✅ Checkout 会话成功，关联的订单ID: ${bookingId}!`);
+    this.logger.log(`✅ Checkout 会话成功，关联的订单ID: ${bookingNumber}!`);
 
     // 2. 更新预约状态为已支付
     try {
       // 你可以自定义 BookingsService 的 updatePaidStatus 方法
-      // await this.bookingsService.updatePaidStatus(bookingId);
+      // await this.bookingsService.updatePaidStatus(bookingNumber);
 
       // 或直接更新数据库
-      // await this.bookingsService.markAsPaid(bookingId, session.payment_intent);
+      // await this.bookingsService.markAsPaid(bookingNumber, session.payment_intent);
 
-      this.logger.log(`预约 ${bookingId} 已标记为已支付`);
+      this.logger.log(`预约 ${bookingNumber} 已标记为已支付`);
     } catch (error) {
       this.logger.error(`更新预约支付状态失败: ${error?.message}`, error?.stack);
     }

@@ -4,10 +4,9 @@
  * @LastEditors: yzy
  * @LastEditTime: 2025-08-25 12:10:46
  */
-import { Controller, Get, Post, Patch, Delete, Body, Param, Query, ParseIntPipe, DefaultValuePipe } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Body, Param, Query, ParseIntPipe, DefaultValuePipe, Logger } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
 import { ProductsService } from './products.service';
-import { AppLogger } from '../../utils/logger';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { Product } from '../../core/entities/product.entity';
@@ -15,12 +14,8 @@ import { Product } from '../../core/entities/product.entity';
 @ApiTags('商品')
 @Controller('products')
 export class ProductsController {
-  constructor(
-    private readonly productsService: ProductsService,
-    private readonly logger: AppLogger
-  ) {
-    this.logger.setContext(ProductsController.name);
-  }
+  private readonly logger = new Logger(ProductsController.name);
+  constructor(private readonly productsService: ProductsService) {}
 
   @Post()
   @ApiOperation({ summary: '创建商品' })

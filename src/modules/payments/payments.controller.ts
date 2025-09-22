@@ -47,7 +47,7 @@ export class PaymentsController {
   async createCheckoutSession(@Body() body: any) {
     // In a real application, you'd get the items and booking info from your database
     // based on what the user has in their cart.
-    const { items, bookingId } = body;
-    return this.paymentsService.createCheckoutSession(items, bookingId);
+    const { items, bookingNumber } = body;
+    return this.paymentsService.createCheckoutSession(items, bookingNumber);
   }
 }

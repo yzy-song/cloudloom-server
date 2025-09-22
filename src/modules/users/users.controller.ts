@@ -4,9 +4,8 @@
  * @LastEditors: yzy
  * @LastEditTime: 2025-08-30 17:03:41
  */
-import { Controller, Get, Post, Put, Delete, Param, Body, Query } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Param, Body, Query, Logger } from '@nestjs/common';
 import { Patch, Req, UseGuards } from '@nestjs/common';
-import { AppLogger } from '../../utils/logger';
 import { UsersService } from './users.service';
 import { CreateUserDto, UpdateUserDto } from './dto';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
@@ -16,12 +15,8 @@ import type { Request } from 'express';
 @ApiTags('用户管理')
 @Controller('users')
 export class UsersController {
-  constructor(
-    private readonly usersService: UsersService,
-    private readonly logger: AppLogger
-  ) {
-    this.logger.setContext(UsersController.name);
-  }
+  private readonly logger = new Logger(UsersController.name);
+  constructor(private readonly usersService: UsersService) {}
 
   @Get()
   @ApiOperation({ summary: '用户列表' })

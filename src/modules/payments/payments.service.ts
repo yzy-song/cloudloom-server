@@ -4,7 +4,7 @@
  * @LastEditors: yzy
  * @LastEditTime: 2025-08-26 02:09:02
  */
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Stripe } from 'stripe';
 import { CreatePaymentDto } from './dto/create-payment.dto';
@@ -12,7 +12,7 @@ import { CreatePaymentDto } from './dto/create-payment.dto';
 @Injectable()
 export class PaymentsService {
   private stripe: Stripe;
-
+  private readonly logger = new Logger(PaymentsService.name);
   constructor(private readonly configService: ConfigService) {
     const stripeSecretKey = this.configService.get<string>('STRIPE_SECRET_KEY');
     if (!stripeSecretKey) {
@@ -44,12 +44,12 @@ export class PaymentsService {
   /**
    * NEW METHOD for Stripe Checkout
    * Creates a Stripe Checkout Session and returns its ID.
-   * @param items - The items in the cart
-   * @param bookingId - The id of the booking
+   * @param items
+   * @param bookingNumber
    */
-  async createCheckoutSession(items: { name: string; amount: number; quantity: number }[], bookingId: number): Promise<{ code: number; message: string; data: { sessionId: string } }> {
+  async createCheckoutSession(items: { name: string; amount: number; quantity: number }[], bookingNumber: string): Promise<{ code: number; message: string; data: { sessionId: string } }> {
     const host = process.env.FRONTEND_URL || 'https://cloudloom.yzysong.com';
-
+    this.logger.log(`Creating checkout session for booking ${bookingNumber} with items: ${JSON.stringify(items)}`);
     const line_items = items.map(item => {
       return {
         price_data: {
@@ -68,12 +68,16 @@ export class PaymentsService {
         payment_method_types: ['card'],
         line_items,
         mode: 'payment',
-        success_url: `${process.env.FRONTEND_URL}/payment-success?bookingId=${bookingId}`,
-        cancel_url: `${process.env.FRONTEND_URL}/payment-cancelled`,
+        success_url: `${host}/payment-success?bookingNumber=${bookingNumber}`,
+        cancel_url: `${host}/payment-cancelled`,
         metadata: {
-          bookingId: bookingId,
+          bookingNumber: bookingNumber,
         },
       });
+      this.logger.log(`Created Stripe Checkout session for booking ${bookingNumber}, session ID: ${session.id}`);
+      if (!session.id) {
+        throw new InternalServerErrorException('Checkout session ID is null.');
+      }
       return {
         code: 0,
         message: 'Checkout session created successfully',
