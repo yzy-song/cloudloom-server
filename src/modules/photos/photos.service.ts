@@ -16,7 +16,7 @@ export class PhotosService {
 
   findAll(): Promise<Photo[]> {
     this.logger.log('查询所有照片');
-    return this.photosRepository.find({ relations: ['user'] });
+    return this.photosRepository.createQueryBuilder('photo').leftJoinAndSelect('photo.user', 'user').getMany();
   }
 
   async create(url: string, userId: string): Promise<Photo> {
