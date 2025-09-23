@@ -1,20 +1,23 @@
-import { Controller, Post, UseInterceptors, UploadedFiles, HttpException, HttpStatus, Inject, Req } from '@nestjs/common';
+import { Controller, Post, UseInterceptors, UploadedFiles, HttpException, HttpStatus, Inject, Req, UseGuards } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { ApiTags, ApiConsumes, ApiBody, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { v4 as uuidv4 } from 'uuid';
+import { UploadsService } from './uploads.service';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 // import { ConfigService } from '@nestjs/config';
 
 @ApiTags('文件上传')
 @Controller('uploads')
 export class UploadsController {
-  // constructor(private readonly configService: ConfigService) {}
+  constructor(private readonly uploadsService: UploadsService) {}
   /**
    * 通用上传接口，根据不同type将图片存储到不同子目录
    * RESTful风格：/uploads/products, /uploads/avatars, /uploads/banners, /uploads/photowall
    */
   @Post(':type')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: '按类型上传图片文件 (支持单张或批量, 最多10张)' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
@@ -58,7 +61,6 @@ export class UploadsController {
           if (!subDir) {
             return cb(new HttpException('不支持的图片类型', HttpStatus.BAD_REQUEST), '');
           }
-          // 读取环境变量UPLOAD_DESTINATION，默认'./public/uploads'
           const uploadRoot = process.env.UPLOAD_DESTINATION || './public/uploads';
           const dest = `${uploadRoot}/${subDir}`;
           const fs = require('fs');
@@ -85,21 +87,12 @@ export class UploadsController {
     })
   )
   uploadFiles(@UploadedFiles() files: Array<Express.Multer.File>, @Req() req): any {
+    const type = req.params.type;
+    const userId = req.user?.id;
     if (!files || files.length === 0) {
       throw new HttpException('没有文件被上传', HttpStatus.BAD_REQUEST);
     }
-    // 返回带相对路径的url
-    const typeMap = {
-      products: 'img-products',
-      avatars: 'img-avatars',
-      banners: 'img-banners',
-      photowall: 'img-photowall',
-    };
-    const type = req.params.type;
-    const subDir = typeMap[type];
-    const data = files.map(file => ({
-      path: `${subDir}/${file.filename}`,
-    }));
-    return { data, message: '上传成功' };
+    // 调用 service 处理业务逻辑，传递 userId
+    return this.uploadsService.handleUpload(files, type, userId);
   }
 }

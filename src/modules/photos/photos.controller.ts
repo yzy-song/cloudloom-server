@@ -9,26 +9,6 @@ import { extname } from 'path';
 export class PhotosController {
   constructor(private readonly photosService: PhotosService) {}
 
-  @Post('upload')
-  @UseGuards(JwtAuthGuard)
-  @UseInterceptors(
-    FileInterceptor('file', {
-      storage: diskStorage({
-        destination: './public/uploads',
-        filename: (req, file, cb) => {
-          const randomName = Array(32)
-            .fill(null)
-            .map(() => Math.round(Math.random() * 16).toString(16))
-            .join('');
-          return cb(null, `${randomName}${extname(file.originalname)}`);
-        },
-      }),
-    })
-  )
-  uploadFile(@UploadedFile() file, @Request() req) {
-    return this.photosService.create(file.filename, req.user.id).then(photo => ({ data: photo, message: '上传成功' }));
-  }
-
   @Get()
   findAll(@Query('userId') userId?: string) {
     if (userId) {
