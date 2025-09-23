@@ -18,6 +18,7 @@ export interface FindAllProductsParams {
   subcategoryId?: number;
   isActive?: boolean;
   tags?: string;
+  sort?: string;
 }
 
 @Injectable()
@@ -56,7 +57,7 @@ export class ProductsService {
 
   async findAll(params: FindAllProductsParams) {
     this.logger.log('查询商品列表', params);
-    const { page = 1, limit = 12, categoryId, subcategoryId, isActive, tags, sort } = params as FindAllProductsParams & { sort?: string };
+    const { page = 1, limit = 12, categoryId, subcategoryId, isActive, tags, sort } = params as FindAllProductsParams;
     const skip = (page - 1) * limit;
 
     const query = this.productRepository.createQueryBuilder('product').leftJoinAndSelect('product.subcategory', 'subcategory').where('1=1');
@@ -91,9 +92,9 @@ export class ProductsService {
     } else if (sort === 'priceDown') {
       query.orderBy('product.price', 'DESC');
     } else if (sort === 'az') {
-      query.orderBy('product.name', 'ASC');
+      query.orderBy('product.title', 'ASC');
     } else if (sort === 'za') {
-      query.orderBy('product.name', 'DESC');
+      query.orderBy('product.title', 'DESC');
     } else {
       // 默认按新旧
       query.orderBy('product.createdAt', 'DESC');
@@ -101,7 +102,7 @@ export class ProductsService {
 
     try {
       const [data, total] = await query.skip(skip).take(limit).getManyAndCount();
-      this.logger.log(`商品列表获取成功，总数: ${total}`);
+      this.logger.log(`商品列表获取成功，总数: ${total} 排序方式: ${sort || '默认'}`);
       return { data, total };
     } catch (error) {
       this.logger.error('商品列表获取失败', error?.stack, params);

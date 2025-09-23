@@ -10,6 +10,7 @@ import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { Product } from '../../core/entities/product.entity';
+import { query } from 'winston';
 
 @ApiTags('商品')
 @Controller('products')
@@ -41,10 +42,11 @@ export class ProductsController {
     @Query('categoryId') categoryId?: number,
     @Query('subcategoryId') subcategoryId?: number,
     @Query('isActive') isActive?: boolean,
-    @Query('tags') tags?: string
+    @Query('tags') tags?: string,
+    @Query('sort') sort?: string
   ) {
-    this.logger.log(`GET /products 查询商品列表 page=${page}, limit=${limit}, categoryId=${categoryId}, subcategoryId=${subcategoryId}, isActive=${isActive}, tags=${tags}`);
-    const result = await this.productsService.findAll({ page, limit, categoryId, subcategoryId, isActive, tags });
+    this.logger.log(`GET /products 查询商品列表 page=${page}, limit=${limit}, categoryId=${categoryId}, subcategoryId=${subcategoryId}, isActive=${isActive}, tags=${tags}, sort=${sort}`);
+    const result = await this.productsService.findAll({ page, limit, categoryId, subcategoryId, isActive, tags, sort });
     return { ...result, message: '商品列表获取成功' };
   }
 
