@@ -9,7 +9,7 @@ import { AppModule } from './app.module';
 import { ConfigService } from '@nestjs/config';
 import * as bodyParser from 'body-parser';
 import { AppLogger } from './utils/logger';
-
+import helmet from 'helmet';
 import { NestExpressApplication } from '@nestjs/platform-express';
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
@@ -17,6 +17,7 @@ async function bootstrap() {
     logger: false,
     abortOnError: false,
   });
+  app.use(helmet());
   const configService = app.get(ConfigService);
   // 动态CORS配置（自动适配开发/生产环境）
   app.enableCors({
