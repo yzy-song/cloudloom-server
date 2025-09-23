@@ -56,7 +56,7 @@ export class ProductsService {
 
   async findAll(params: FindAllProductsParams) {
     this.logger.log('查询商品列表', params);
-    const { page = 1, limit = 12, categoryId, subcategoryId, isActive, tags } = params;
+    const { page = 1, limit = 12, categoryId, subcategoryId, isActive, tags, sort } = params as FindAllProductsParams & { sort?: string };
     const skip = (page - 1) * limit;
 
     const query = this.productRepository.createQueryBuilder('product').leftJoinAndSelect('product.subcategory', 'subcategory').where('1=1');
@@ -85,8 +85,22 @@ export class ProductsService {
       }
     }
 
+    // 排序逻辑
+    if (sort === 'priceUp') {
+      query.orderBy('product.price', 'ASC');
+    } else if (sort === 'priceDown') {
+      query.orderBy('product.price', 'DESC');
+    } else if (sort === 'az') {
+      query.orderBy('product.name', 'ASC');
+    } else if (sort === 'za') {
+      query.orderBy('product.name', 'DESC');
+    } else {
+      // 默认按新旧
+      query.orderBy('product.createdAt', 'DESC');
+    }
+
     try {
-      const [data, total] = await query.skip(skip).take(limit).orderBy('product.createdAt', 'DESC').getManyAndCount();
+      const [data, total] = await query.skip(skip).take(limit).getManyAndCount();
       this.logger.log(`商品列表获取成功，总数: ${total}`);
       return { data, total };
     } catch (error) {
