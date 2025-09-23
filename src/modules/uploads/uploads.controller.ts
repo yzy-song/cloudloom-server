@@ -80,7 +80,7 @@ export class UploadsController {
         cb(null, true);
       },
       limits: {
-        fileSize: 1024 * 1024 * 5, // 每个文件 5 MB
+        fileSize: 1024 * 1024 * 20, // 每个文件 20 MB
       },
     })
   )
