@@ -21,7 +21,10 @@ async function bootstrap() {
   const configService = app.get(ConfigService);
   // 动态CORS配置（自动适配开发/生产环境）
   app.enableCors({
-    origin: configService.get('CORS_ORIGINS').split(','), // 从环境变量读取
+    origin: configService
+      .get('CORS_ORIGINS')
+      .split(',')
+      .map(item => item.trim()), // 从环境变量读取
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'], // 显式声明
     credentials: true,
   });
