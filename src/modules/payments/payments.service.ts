@@ -86,7 +86,7 @@ export class PaymentsService {
         },
       };
     } catch (error) {
-      console.error('Error creating checkout session:', error);
+      this.logger.error('Error creating checkout session:', error);
       throw new InternalServerErrorException('Failed to create checkout session.');
     }
   }
@@ -103,7 +103,7 @@ export class PaymentsService {
         // Handle the failed payment
         break;
       default:
-        console.log(`Unhandled event type ${event.type}`);
+        this.logger.error(`Unhandled event type ${event.type}`);
     }
   }
 }
