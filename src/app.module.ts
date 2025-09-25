@@ -13,6 +13,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ServeStaticModule } from '@nestjs/serve-static'; // <-- 1. 导入 ServeStaticModule
 import { join } from 'path'; // <-- 2. 导入 Node.js 的 path 模块
+import { ThrottlerModule } from '@nestjs/throttler';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -75,6 +76,18 @@ import { AppLogger } from './utils/logger';
     UserFavoritesModule,
     UploadsModule,
     PhotosModule,
+    ThrottlerModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        throttlers: [
+          {
+            ttl: parseInt(configService.get('RATE_LIMIT_WINDOW') || '900'), // 每个IP15分钟内最多500次请求，单位：秒
+            limit: parseInt(configService.get('RATE_LIMIT_MAX') || '500'),
+          },
+        ],
+      }),
+    }),
   ],
   controllers: [AppController],
   providers: [

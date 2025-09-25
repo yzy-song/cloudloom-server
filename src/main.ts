@@ -38,6 +38,13 @@ async function bootstrap() {
   // 只对 webhook 路由使用 raw body
   app.use('/payments/webhook', bodyParser.raw({ type: 'application/json' }));
 
+  // 读取请求体大小限制
+  const maxRequestSize = configService.get('MAX_REQUEST_SIZE') || '1mb';
+
+  // 设置 bodyParser 限制
+  app.useBodyParser('json', { limit: maxRequestSize });
+  app.useBodyParser('urlencoded', { limit: maxRequestSize, extended: true });
+
   const port = configService.get('PORT') || 3000;
   await app.listen(port, '0.0.0.0');
   console.log(`Application is running on: ${await app.getUrl()}`);
