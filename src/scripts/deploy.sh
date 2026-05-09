@@ -66,6 +66,28 @@ validate_environment() {
 # 全局变量来保存上一个成功的版本路径
 LAST_SUCCESSFUL_PATH=""
 
+# 上传目标目录准备
+prepare_upload_destination() {
+    local upload_destination="${UPLOAD_DESTINATION:-./public/uploads}"
+    local target_path
+
+    if [[ "${upload_destination}" = /* ]]; then
+        target_path="${upload_destination}"
+    else
+        target_path="${DEPLOY_ROOT}/${upload_destination#./}"
+    fi
+
+    echo -e "${YELLOW}Preparing upload destination: ${target_path}${NC}"
+    mkdir -p "${target_path}" || {
+        echo -e "${RED}✗ Failed to create upload destination: ${target_path}${NC}"
+        log_error "upload_destination_create_failed"
+        rollback_deployment
+        exit 1
+    }
+    chown -R ${APP_USER}:${APP_GROUP} "${target_path}" || true
+    chmod -R u=rwX,g=rX,o=rX "${target_path}" || true
+}
+
 # 回滚机制
 rollback_deployment() {
     echo -e "${RED}Initiating automatic rollback process...${NC}"
@@ -230,7 +252,8 @@ if [ -f "${ENV_FILE}" ]; then
     echo -e "${GREEN}.env file copied to ${RELEASE_PATH}/.env.${NC}"
     
     source .env
-    validate_environment
+    validate_environment    prepare_upload_destination    
+    prepare_upload_destination
 else
     echo -e "${RED}Warning: .env file not found at ${ENV_FILE}, some checks will be skipped${NC}"
 fi

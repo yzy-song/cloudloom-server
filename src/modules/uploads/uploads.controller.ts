@@ -1,7 +1,7 @@
 import { Controller, Post, UseInterceptors, UploadedFiles, HttpException, HttpStatus, Inject, Req, UseGuards } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
-import { extname } from 'path';
+import { extname, resolve } from 'path';
 import { ApiTags, ApiConsumes, ApiBody, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { v4 as uuidv4 } from 'uuid';
 import { UploadsService } from './uploads.service';
@@ -62,10 +62,10 @@ export class UploadsController {
             return cb(new HttpException('不支持的图片类型', HttpStatus.BAD_REQUEST), '');
           }
           const uploadRoot = process.env.UPLOAD_DESTINATION || './public/uploads';
-          const dest = `${uploadRoot}/${subDir}`;
+          const dest = resolve(uploadRoot, subDir);
           const fs = require('fs');
           if (!fs.existsSync(dest)) {
-            fs.mkdirSync(dest, { recursive: true });
+            fs.mkdirSync(dest, { recursive: true, mode: 0o755 });
           }
           cb(null, dest);
         },

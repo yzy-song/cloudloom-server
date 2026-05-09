@@ -23,9 +23,9 @@ export class UploadsService {
       throw new HttpException('不支持的图片类型', HttpStatus.BAD_REQUEST);
     }
     const uploadRoot = process.env.UPLOAD_DESTINATION || './public/uploads';
-    const dest = `${uploadRoot}/${subDir}`;
+    const dest = resolve(uploadRoot, subDir);
     if (!fs.existsSync(dest)) {
-      fs.mkdirSync(dest, { recursive: true });
+      fs.mkdirSync(dest, { recursive: true, mode: 0o755 });
     }
     // 重新命名并移动文件
     const data: Array<{ path: string }> = [];
