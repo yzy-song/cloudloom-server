@@ -298,6 +298,14 @@ pm2 startOrReload "${ECOSYSTEM_CONFIG_FILE}" --env production --cwd "${DEPLOY_RO
     }
 }
 
+echo -e "${YELLOW}Saving PM2 process list...${NC}"
+pm2 save || {
+    echo -e "${RED}✗ Failed to save PM2 process list${NC}"
+    log_error "pm2_save_failed"
+    rollback_deployment
+    exit 1
+}
+
 # 12. 部署后健康检查
 wait_for_app_health
 
