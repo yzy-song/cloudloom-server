@@ -58,7 +58,7 @@ import { AppLogger } from './utils/logger';
         database: configService.get<string>('DB_DATABASE'),
         entities: [__dirname + '/core/entities/*.entity{.ts,.js}'],
         synchronize: configService.get('DB_SYNCHRONIZE') === 'true',
-        migrationsRun: configService.get('NODE_ENV') !== 'development',
+        migrationsRun: false,  // 迁移由部署脚本手动执行，不在启动时自动执行
       }),
       inject: [ConfigService],
     }),

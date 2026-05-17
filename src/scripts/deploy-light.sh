@@ -40,7 +40,7 @@ npx ts-node --transpile-only ./node_modules/typeorm/cli.js migration:run --dataS
   echo "WARN: migration failed, continuing..."
 
 echo "[5/5] Switching symlink + PM2 reload"
-cp ecosystem.config.js "$ROOT/ecosystem.config.js"
+sudo cp ecosystem.config.js "$ROOT/ecosystem.config.js"
 sudo ln -nfs "$RELEASE_DIR/dist" "$ROOT/current"
 
 cd "$ROOT"
