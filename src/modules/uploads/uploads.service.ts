@@ -1,6 +1,6 @@
 import { Injectable, HttpException, HttpStatus, Inject, forwardRef } from '@nestjs/common';
 import { v4 as uuidv4 } from 'uuid';
-import { extname } from 'path';
+import { extname, resolve } from 'path';
 import * as fs from 'fs';
 import { PhotosService } from '../photos/photos.service';
 
