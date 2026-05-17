@@ -1,0 +1,91 @@
+name: Build & Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - run: npm ci
+
+      - run: npm run build
+
+      - name: Package deploy artifact
+        run: |
+          tar -czf deploy.tar.gz \
+            dist/ \
+            package.json \
+            package-lock.json \
+            ecosystem.config.js \
+            tsconfig.json \
+            tsconfig.build.json \
+            src/data-source.ts \
+            src/migrations/
+
+      - name: Setup SSH
+        uses: shimataro/ssh-key-action@v2
+        with:
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          known_hosts: ${{ secrets.SSH_KNOWN_HOSTS }}
+
+      - name: Upload package to server
+        run: scp deploy.tar.gz ubuntu@138.2.42.101:/var/www/cloudloom-server/
+
+      - name: Deploy on server
+        run: |
+          ssh ubuntu@138.2.42.101 \
+            "export GIT_SHA='${{ github.sha }}' ; bash -s" << 'REMOTE_SCRIPT'
+            set -e
+            ROOT=/var/www/cloudloom-server
+            cd "$ROOT"
+
+            TS=$(date +%Y%m%d%H%M%S)
+            SHA_SHORT=$(echo "$GIT_SHA" | cut -c1-7)
+            RELEASE="releases/${TS}-${SHA_SHORT}"
+            mkdir -p "$RELEASE"
+
+            echo "[1/6] Extracting package → ${RELEASE}"
+            tar -xzf deploy.tar.gz -C "$RELEASE"
+            rm -f deploy.tar.gz
+
+            echo "[2/6] Linking .env"
+            cp .env "$RELEASE/.env"
+
+            cd "$RELEASE"
+
+            echo "[3/6] Installing dependencies"
+            npm ci --prefer-offline --no-audit --no-fund
+
+            echo "[4/6] Running migrations"
+            npx ts-node --transpile-only ./node_modules/typeorm/cli.js migration:run --dataSource src/data-source.ts || \
+              echo "WARN: migration failed, continuing..."
+
+            echo "[5/6] Switching symlink + reloading PM2"
+            ln -nfs "$ROOT/$RELEASE/dist" "$ROOT/current"
+            cp ecosystem.config.js "$ROOT/ecosystem.config.js"
+
+            cd "$ROOT"
+            sudo -u cloudloom pm2 startOrReload ecosystem.config.js --env production --cwd "$ROOT" || \
+              sudo -u cloudloom pm2 start ecosystem.config.js --env production --cwd "$ROOT"
+            sudo -u cloudloom pm2 save
+
+            echo "[6/6] Cleanup old releases (keep 5)"
+            cd "$ROOT/releases" && ls -t | tail -n +6 | xargs -I {} rm -rf {}
+
+            echo ">>> HEALTH CHECK <<<"
+            sleep 3
+            curl -sf http://localhost:3000/api/health && echo "OK" || echo "FAIL"
+            echo ">>> DEPLOYED: ${TS}-${SHA_SHORT} <<<"
+          REMOTE_SCRIPT
