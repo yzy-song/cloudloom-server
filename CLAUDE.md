@@ -188,7 +188,8 @@ Server (via SSH as ubuntu):
 | Secret | Description |
 |--------|-------------|
 | `SSH_PRIVATE_KEY` | 私钥 `~/.ssh/id_rsa` 的内容 |
-| `SSH_KNOWN_HOSTS` | `ssh-keyscan 138.2.42.101` 的输出 |
+| `SSH_HOST` | `138.2.42.101` |
+| `SSH_USER` | `ubuntu` |
 
 ### Server directory structure (post-deploy)
 

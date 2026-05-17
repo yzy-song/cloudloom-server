@@ -1,4 +1,4 @@
-name: Build & Deploy
+name: Deploy CloudLoom
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  deploy:
+  build-and-deploy:
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -22,7 +22,7 @@ jobs:
 
       - run: npm run build
 
-      - name: Package deploy artifact
+      - name: Package dist
         run: |
           tar -czf deploy.tar.gz \
             dist/ \
@@ -34,58 +34,55 @@ jobs:
             src/data-source.ts \
             src/migrations/
 
-      - name: Setup SSH
-        uses: shimataro/ssh-key-action@v2
-        with:
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          known_hosts: ${{ secrets.SSH_KNOWN_HOSTS }}
-
-      - name: Upload package to server
-        run: scp deploy.tar.gz ubuntu@138.2.42.101:/var/www/cloudloom-server/
-
-      - name: Deploy on server
+      - name: Deploy to server
+        env:
+          SSH_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
         run: |
-          ssh ubuntu@138.2.42.101 \
-            "export GIT_SHA='${{ github.sha }}' ; bash -s" << 'REMOTE_SCRIPT'
+          set -e
+          mkdir -p ~/.ssh
+          echo "$SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          SSH="ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=accept-new"
+          SCP="scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=accept-new"
+
+          RELEASE_DIR="/var/www/cloudloom-server/releases/$GITHUB_SHA"
+          $SSH $SSH_USER@$SSH_HOST "sudo mkdir -p $RELEASE_DIR && sudo chown $SSH_USER:$SSH_USER $RELEASE_DIR"
+
+          $SCP deploy.tar.gz $SSH_USER@$SSH_HOST:$RELEASE_DIR/
+
+          $SSH $SSH_USER@$SSH_HOST "
             set -e
             ROOT=/var/www/cloudloom-server
-            cd "$ROOT"
+            cd $RELEASE_DIR
 
-            TS=$(date +%Y%m%d%H%M%S)
-            SHA_SHORT=$(echo "$GIT_SHA" | cut -c1-7)
-            RELEASE="releases/${TS}-${SHA_SHORT}"
-            mkdir -p "$RELEASE"
+            echo '[1/5] Extracting...'
+            tar xzf deploy.tar.gz && rm deploy.tar.gz
 
-            echo "[1/6] Extracting package → ${RELEASE}"
-            tar -xzf deploy.tar.gz -C "$RELEASE"
-            rm -f deploy.tar.gz
+            echo '[2/5] Linking .env'
+            cp \$ROOT/.env .env
 
-            echo "[2/6] Linking .env"
-            cp .env "$RELEASE/.env"
-
-            cd "$RELEASE"
-
-            echo "[3/6] Installing dependencies"
+            echo '[3/5] Installing dependencies'
             npm ci --prefer-offline --no-audit --no-fund
 
-            echo "[4/6] Running migrations"
+            echo '[4/5] Running migrations'
             npx ts-node --transpile-only ./node_modules/typeorm/cli.js migration:run --dataSource src/data-source.ts || \
-              echo "WARN: migration failed, continuing..."
+              echo 'WARN: migration failed, continuing...'
 
-            echo "[5/6] Switching symlink + reloading PM2"
-            ln -nfs "$ROOT/$RELEASE/dist" "$ROOT/current"
-            cp ecosystem.config.js "$ROOT/ecosystem.config.js"
+            echo '[5/5] Switching symlink + PM2 reload'
+            cp ecosystem.config.js \$ROOT/ecosystem.config.js
+            sudo ln -nfs $RELEASE_DIR/dist \$ROOT/current
 
-            cd "$ROOT"
-            sudo -u cloudloom pm2 startOrReload ecosystem.config.js --env production --cwd "$ROOT" || \
-              sudo -u cloudloom pm2 start ecosystem.config.js --env production --cwd "$ROOT"
+            cd \$ROOT
+            sudo -u cloudloom pm2 startOrReload ecosystem.config.js --env production --cwd \$ROOT || \
+              sudo -u cloudloom pm2 start ecosystem.config.js --env production --cwd \$ROOT
             sudo -u cloudloom pm2 save
 
-            echo "[6/6] Cleanup old releases (keep 5)"
-            cd "$ROOT/releases" && ls -t | tail -n +6 | xargs -I {} rm -rf {}
+            # Keep last 5 releases
+            ls -dt \$ROOT/releases/*/ 2>/dev/null | tail -n +6 | sudo xargs rm -rf 2>/dev/null || true
 
-            echo ">>> HEALTH CHECK <<<"
             sleep 3
-            curl -sf http://localhost:3000/api/health && echo "OK" || echo "FAIL"
-            echo ">>> DEPLOYED: ${TS}-${SHA_SHORT} <<<"
-          REMOTE_SCRIPT
+            curl -sf http://localhost:3000/api/health && echo 'HEALTH: OK' || echo 'HEALTH: FAIL'
+            echo '>>> DEPLOYED: $GITHUB_SHA <<<'
+          "
