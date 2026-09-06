@@ -52,5 +52,11 @@ sudo -u cloudloom pm2 save
 ls -dt "$ROOT/releases/"*/ 2>/dev/null | tail -n +6 | sudo xargs rm -rf 2>/dev/null || true
 
 sleep 3
-curl -sf http://localhost:3000/api/health && echo "HEALTH: OK" || echo "HEALTH: FAIL"
+HEALTH_OK=false
+for i in 1 2 3 4 5 6 7 8 9 10; do
+  if curl -sf http://localhost:3000/api/health; then HEALTH_OK=true; break; fi
+  echo "health check retry $i..."
+  sleep 3
+done
+[ "$HEALTH_OK" = true ] && echo "HEALTH: OK" || echo "HEALTH: FAIL"
 echo ">>> DEPLOYED <<<"
