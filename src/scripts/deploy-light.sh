@@ -6,7 +6,7 @@
 # 本地手动流程:
 #   npm ci && npm run build
 #   tar -czf deploy.tar.gz dist/ package.json package-lock.json ecosystem.config.js tsconfig.json tsconfig.build.json src/data-source.ts src/migrations/
-#   scp deploy.tar.gz ubuntu@138.2.42.101:/var/www/cloudloom-server/
+#   scp deploy.tar.gz ubuntu@129.225.181.19:/var/www/cloudloom-server/
 #   ssh yzy 'cd /var/www/cloudloom-server && bash src/scripts/deploy-light.sh'
 # =========================================================================
 set -e

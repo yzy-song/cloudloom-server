@@ -181,14 +181,14 @@ Server (via SSH as ubuntu):
 
 - `ubuntu` 已加入 `cloudloom` group，release 目录有 setgid 位
 - `ubuntu` 通过 sudoers 可免密码以 `cloudloom` 身份执行 PM2 命令
-- 服务器 IP: `138.2.42.101`，SSH: `ssh yzy`（PowerShell 别名 → `ssh ubuntu@138.2.42.101`）
+- 服务器 IP: `129.225.181.19`，SSH: `ssh yzy`（PowerShell 别名 → `ssh ubuntu@129.225.181.19`）
 
 ### Required GitHub Secrets
 
 | Secret | Description |
 |--------|-------------|
 | `SSH_PRIVATE_KEY` | 私钥 `~/.ssh/id_rsa` 的内容 |
-| `SSH_HOST` | `138.2.42.101` |
+| `SSH_HOST` | `129.225.181.19` |
 | `SSH_USER` | `ubuntu` |
 
 ### Server directory structure (post-deploy)
@@ -218,7 +218,7 @@ Server (via SSH as ubuntu):
 # Local
 npm ci && npm run build
 tar -czf deploy.tar.gz dist/ package.json package-lock.json ecosystem.config.js tsconfig.json tsconfig.build.json src/data-source.ts src/migrations/
-scp deploy.tar.gz ubuntu@138.2.42.101:/var/www/cloudloom-server/
+scp deploy.tar.gz ubuntu@129.225.181.19:/var/www/cloudloom-server/
 
 # Server
 ssh yzy 'cd /var/www/cloudloom-server && bash src/scripts/deploy-light.sh'
